@@ -101,8 +101,8 @@ LocalAIScanner.exe ./models
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/local-ai-scanner.git
-cd local-ai-scanner
+git clone https://github.com/lfvbdghkjfgm/local-ai-scanner.git
+cd local-ai-scanner/src
 
 # Create virtual environment (optional but recommended)
 python -m venv venv
