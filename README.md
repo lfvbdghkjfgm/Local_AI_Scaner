@@ -396,12 +396,6 @@ This scanner is designed to safely handle potentially malicious model files:
 
 ## Support
 
-### Documentation
-
-- View [ARCHITECTURE_AND_ANALYSIS.md](ARCHITECTURE_AND_ANALYSIS.md) for technical details
-- Check release notes for version-specific information
-- Review test files in `tests/` directory for usage examples
-
 ### Troubleshooting
 
 #### Model File Not Recognized
