@@ -1,9 +1,7 @@
 #!/bin/bash
 
-set -e
-
 # LOCAL AI SCANNER - Linux Installer
-# Version 1.3
+# Supports pre-built executables or installation from source with venv
 
 echo ""
 echo "====================================================="
@@ -13,12 +11,11 @@ echo ""
 
 # Check if running as root (needed for system-wide installation)
 if [ "$EUID" -ne 0 ]; then
-    echo "Note: Running as user will install to home directory instead of system-wide"
     INSTALL_PREFIX="$HOME/.local"
-    NEED_SUDO=0
+    INSTALL_TYPE="user"
 else
     INSTALL_PREFIX="/usr/local"
-    NEED_SUDO=1
+    INSTALL_TYPE="system"
 fi
 
 # Get installation version from user
@@ -54,14 +51,40 @@ case "$VERSION" in
         ;;
 esac
 
+# Choose installation method
+echo ""
+echo "Installation method:"
+echo " [1] Pre-built executable (Recommended - fast)"
+echo " [2] From source with venv (Requires Python)"
+echo ""
+read -p "Select method (1-2, default is 1): " INSTALL_METHOD
+INSTALL_METHOD=${INSTALL_METHOD:-1}
+
+case "$INSTALL_METHOD" in
+    1)
+        METHOD="RELEASE"
+        ;;
+    2)
+        METHOD="SOURCE"
+        ;;
+    *)
+        echo "Invalid selection"
+        exit 1
+        ;;
+esac
+
 # Define installation paths
 INSTALL_PATH="$INSTALL_PREFIX/share/local-ai-scanner/v$VERSION_NUM"
 BIN_PATH="$INSTALL_PREFIX/bin"
 
 echo ""
-echo "Installation directory: $INSTALL_PATH"
+echo "Installation details:"
+echo " Version: v$VERSION_NUM"
+echo " Method: $METHOD"
+echo " Location: $INSTALL_PATH"
+echo " Install type: $INSTALL_TYPE"
 echo ""
-read -p "Continue with installation? (Y/n): " CONFIRM
+read -p "Continue? (Y/n): " CONFIRM
 CONFIRM=${CONFIRM:-Y}
 
 if [[ ! "$CONFIRM" =~ ^[Yy]$ ]]; then
@@ -69,91 +92,165 @@ if [[ ! "$CONFIRM" =~ ^[Yy]$ ]]; then
     exit 0
 fi
 
-# Check for release files
+# Set error handling
+set -e
+
+# Get script directory
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-RELEASE_PATH="$SCRIPT_DIR/releases/windows"
 
-if [ ! -d "$RELEASE_PATH/$RELEASE_DIR" ]; then
-    echo ""
-    echo "Error: Release files not found at $RELEASE_PATH/$RELEASE_DIR"
-    echo "Using alternative Linux release path..."
-    
-    RELEASE_PATH="$SCRIPT_DIR/releases/linux"
-    if [ ! -d "$RELEASE_PATH/$RELEASE_DIR" ]; then
-        echo "Error: Release files not found"
-        echo "Please ensure the release package is properly extracted"
-        exit 1
-    fi
-fi
-
-# Create installation directories
+# Create directories
 echo ""
 echo "Creating installation directories..."
 mkdir -p "$INSTALL_PATH"
 mkdir -p "$BIN_PATH"
 
-# Copy files
-echo "Copying files..."
-cp -r "$RELEASE_PATH/$RELEASE_DIR"/* "$INSTALL_PATH/" 2>/dev/null || {
-    echo "Error: Failed to copy files"
-    exit 1
-}
-
-# Find the actual executable name
-EXE_FILE=""
-if [ -f "$INSTALL_PATH/LocalAIScanner" ]; then
-    EXE_FILE="$INSTALL_PATH/LocalAIScanner"
-elif [ -f "$INSTALL_PATH/main" ]; then
-    EXE_FILE="$INSTALL_PATH/main"
-elif [ -f "$INSTALL_PATH/LocalAIScanner.exe" ]; then
-    EXE_FILE="$INSTALL_PATH/LocalAIScanner.exe"
+# ===== INSTALLATION FROM PRE-BUILT RELEASE =====
+if [ "$METHOD" = "RELEASE" ]; then
+    echo ""
+    echo "Installing from pre-built release..."
+    
+    # Try Linux release first, then Windows
+    RELEASE_PATH="$SCRIPT_DIR/releases/linux"
+    
+    if [ ! -d "$RELEASE_PATH/$RELEASE_DIR" ]; then
+        RELEASE_PATH="$SCRIPT_DIR/releases/windows"
+    fi
+    
+    if [ ! -d "$RELEASE_PATH/$RELEASE_DIR" ]; then
+        echo ""
+        echo "Error: Release files not found"
+        echo "Checked paths:"
+        echo "  - $SCRIPT_DIR/releases/linux/$RELEASE_DIR"
+        echo "  - $SCRIPT_DIR/releases/windows/$RELEASE_DIR"
+        echo ""
+        exit 1
+    fi
+    
+    echo "Copying files from: $RELEASE_PATH/$RELEASE_DIR"
+    cp -r "$RELEASE_PATH/$RELEASE_DIR"/* "$INSTALL_PATH/" 2>/dev/null || {
+        echo "Error: Failed to copy files"
+        exit 1
+    }
+    
+    # Find executable
+    EXE_FILE=""
+    if [ -f "$INSTALL_PATH/LocalAIScanner" ]; then
+        EXE_FILE="$INSTALL_PATH/LocalAIScanner"
+    elif [ -f "$INSTALL_PATH/main" ]; then
+        EXE_FILE="$INSTALL_PATH/main"
+    fi
+    
+    if [ -z "$EXE_FILE" ]; then
+        echo "Error: Could not find executable in release"
+        ls -la "$INSTALL_PATH/"
+        exit 1
+    fi
+    
+    # Make executable
+    chmod +x "$EXE_FILE"
 fi
 
-if [ -z "$EXE_FILE" ]; then
-    echo "Warning: Could not find executable file in $INSTALL_PATH"
-    echo "Available files:"
-    ls -la "$INSTALL_PATH/" 2>/dev/null || true
-    echo "Installation completed but executable not found"
-    exit 1
-fi
-
-# Make executable
-chmod +x "$EXE_FILE"
-echo "Executable located at: $EXE_FILE"
-
-# Create wrapper script in bin directory
-echo "Creating command-line wrapper..."
-cat > "$BIN_PATH/LocalAIScanner" << EOF
+# ===== INSTALLATION FROM SOURCE WITH VENV =====
+if [ "$METHOD" = "SOURCE" ]; then
+    echo ""
+    echo "Installing from source with Python virtual environment..."
+    
+    # Check Python
+    if ! command -v python3 &> /dev/null; then
+        echo ""
+        echo "Error: Python 3 not found"
+        echo "Please install Python 3.8 or higher"
+        echo "Ubuntu/Debian: sudo apt-get install python3 python3-venv"
+        echo "RedHat/Fedora: sudo dnf install python3 python3-venv"
+        echo ""
+        exit 1
+    fi
+    
+    PYTHON_VERSION=$(python3 --version | awk '{print $2}')
+    echo "Python $PYTHON_VERSION found"
+    
+    # Create venv
+    echo "Creating virtual environment..."
+    python3 -m venv "$INSTALL_PATH/venv"
+    
+    # Activate venv
+    source "$INSTALL_PATH/venv/bin/activate"
+    
+    # Copy source files
+    SRC_PATH="$SCRIPT_DIR/src/$RELEASE_DIR"
+    
+    if [ ! -d "$SRC_PATH" ]; then
+        echo ""
+        echo "Error: Source files not found at: $SRC_PATH"
+        echo ""
+        deactivate 2>/dev/null || true
+        exit 1
+    fi
+    
+    echo "Copying source files..."
+    cp -r "$SRC_PATH"/* "$INSTALL_PATH/source/" 2>/dev/null || {
+        echo "Error: Failed to copy source files"
+        deactivate 2>/dev/null || true
+        exit 1
+    }
+    
+    # Install requirements
+    echo "Installing Python dependencies..."
+    REQUIREMENTS="$SCRIPT_DIR/requirements.txt"
+    
+    if [ -f "$REQUIREMENTS" ]; then
+        pip install -q -r "$REQUIREMENTS" || {
+            echo "Warning: Some dependencies failed to install"
+            echo "You may need to install them manually"
+        }
+    else
+        echo "Warning: requirements.txt not found"
+    fi
+    
+    # Create wrapper script
+    echo "Creating wrapper script..."
+    EXE_FILE="$BIN_PATH/LocalAIScanner"
+    cat > "$EXE_FILE" << 'SCRIPT_EOF'
 #!/bin/bash
-"$EXE_FILE" "\$@"
-EOF
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# Find the install directory
+INSTALL_DIR=$(find "$SCRIPT_DIR" -name "venv" -type d 2>/dev/null | head -1 | sed 's/\/venv.*//')
+if [ -z "$INSTALL_DIR" ]; then
+    INSTALL_DIR=$(dirname "$(python3 -c 'import site; print(site.getsitepackages()[0])' 2>/dev/null)")
+fi
+source "$INSTALL_DIR/venv/bin/activate" 2>/dev/null || true
+cd "$INSTALL_DIR/source" 2>/dev/null || cd "$INSTALL_DIR" 2>/dev/null
+python main.py "$@"
+SCRIPT_EOF
+    
+    chmod +x "$EXE_FILE"
+    
+    # Deactivate venv
+    deactivate 2>/dev/null || true
+fi
 
-chmod +x "$BIN_PATH/LocalAIScanner"
+# Create symlink shortcut
+ln -sf "$EXE_FILE" "$BIN_PATH/scan" 2>/dev/null || true
 
-# Create symlink with different name
-ln -sf "$BIN_PATH/LocalAIScanner" "$BIN_PATH/scan" 2>/dev/null || true
-
-# Add PATH update instructions
-echo "Checking PATH configuration..."
+# Add to PATH
+echo ""
+echo "Configuring PATH..."
 SHELL_RC=""
 if [ -f "$HOME/.bashrc" ]; then
     SHELL_RC="$HOME/.bashrc"
-elif [ -f "$HOME/.bash_profile" ]; then
-    SHELL_RC="$HOME/.bash_profile"
 fi
 
-if [ -n "$SHELL_RC" ] && ! grep -q "export PATH=.*$BIN_PATH" "$SHELL_RC"; then
-    echo "Adding $BIN_PATH to PATH..."
+if [ -n "$SHELL_RC" ] && ! grep -q "$BIN_PATH" "$SHELL_RC" 2>/dev/null; then
     echo "export PATH=\"$BIN_PATH:\$PATH\"" >> "$SHELL_RC"
+    echo "Added $BIN_PATH to ~/.bashrc"
 fi
 
-# Also check zsh
-if [ -f "$HOME/.zshrc" ] && ! grep -q "export PATH=.*$BIN_PATH" "$HOME/.zshrc"; then
+if [ -f "$HOME/.zshrc" ] && ! grep -q "$BIN_PATH" "$HOME/.zshrc" 2>/dev/null; then
     echo "export PATH=\"$BIN_PATH:\$PATH\"" >> "$HOME/.zshrc"
+    echo "Added $BIN_PATH to ~/.zshrc"
 fi
 
-# Create uninstaller script
-echo "Creating uninstaller..."
+# Create uninstaller
 UNINSTALL_SCRIPT="$INSTALL_PATH/uninstall.sh"
 cat > "$UNINSTALL_SCRIPT" << EOF
 #!/bin/bash
@@ -161,22 +258,9 @@ echo "Removing LOCAL AI SCANNER v$VERSION_NUM..."
 rm -rf "$INSTALL_PATH"
 rm -f "$BIN_PATH/LocalAIScanner"
 rm -f "$BIN_PATH/scan"
-if [ -d "${INSTALL_PATH%/*}" ] && [ -z "\$(ls -A ${INSTALL_PATH%/*} 2>/dev/null)" ]; then
-    rmdir "${INSTALL_PATH%/*}" 2>/dev/null || true
-fi
 echo "Uninstallation complete"
 EOF
 chmod +x "$UNINSTALL_SCRIPT"
-
-# Test installation
-echo ""
-echo "Testing installation..."
-if "$EXE_FILE" --help >/dev/null 2>&1; then
-    echo "Installation verified successfully"
-else
-    echo "Warning: Executable test failed"
-    echo "Installation may be incomplete"
-fi
 
 # Print summary
 echo ""
@@ -184,29 +268,31 @@ echo "====================================================="
 echo "  Installation Complete!"
 echo "====================================================="
 echo ""
-echo "LOCAL AI SCANNER v$VERSION_NUM installed to:"
-echo "$INSTALL_PATH"
+echo "Version: v$VERSION_NUM"
+echo "Location: $INSTALL_PATH"
+if [ "$METHOD" = "SOURCE" ]; then
+    echo "Method: From source with venv"
+else
+    echo "Method: Pre-built executable"
+fi
 echo ""
-echo "Usage:"
-echo " 1. Reload shell or run: source ~/.bashrc"
-echo ""
-echo " 2. From command line:"
-echo "    LocalAIScanner model.pkl"
-echo "    LocalAIScanner ./models"
-echo "    scan model.h5"
-echo ""
-echo " 3. Parameters:"
-echo "    --scan-type {full,security,backdoor,format}"
-echo "    -f, --output-format {text,json,csv,html}"
-echo "    -o, --output-file FILE"
-echo "    -v, --verbose"
+echo "To use the scanner:"
+echo "  1. Reload shell: source ~/.bashrc"
+echo "  2. Run: LocalAIScanner [options] PATH"
 echo ""
 echo "Examples:"
 echo "  LocalAIScanner model.pkl"
-echo "  LocalAIScanner ./models -f json -o report.json"
-echo "  scan model.h5 --scan-type security -v"
+echo "  LocalAIScanner ./models"
+echo "  LocalAIScanner ./model.h5 -f json -o report.json"
+echo "  scan model.pt --scan-type security -v"
+echo ""
+echo "Installation type: $INSTALL_TYPE"
+if [ "$INSTALL_TYPE" = "user" ]; then
+    echo "Note: Installed to user directory ($INSTALL_PREFIX)"
+else
+    echo "Note: Installed to system directory ($INSTALL_PREFIX)"
+fi
 echo ""
 echo "To uninstall: bash $UNINSTALL_SCRIPT"
-echo ""
 echo "====================================================="
 echo ""

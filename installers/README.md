@@ -1,251 +1,379 @@
-# LOCAL AI SCANNER - Installation Guides
+# LOCAL AI SCANNER - Advanced Installation Guides
 
-This directory contains working installation scripts for Windows and Linux platforms.
+Complete installation scripts for **Windows** and **Linux** with flexible options for both pre-built executables and source-based installations.
 
-## Features
+## ✨ Features
 
-Both installers include:
+Both installers now support:
 
-- Version selection (v1.0 through v1.3)
-- Admin/privilege checking
-- Automatic file discovery and copying
-- PATH configuration for command-line access
-- Desktop shortcut creation (Windows)
-- Uninstaller generation
-- Installation verification
-- Clear usage instructions
+- **Two installation methods**:
+  - 📦 Pre-built executable (fast, recommended)
+  - 🐍 From source with virtual environment (customizable)
+- **Version selection** (v1.0, v1.1, v1.2, v1.3)
+- **Smart path detection** and automatic configuration
+- **Virtual environment creation** for source installations
+- **Dependency management** from `requirements.txt`
+- **Command-line integration** with PATH configuration
+- **Desktop shortcuts** and quick-access commands
+- **Uninstaller scripts** for clean removal
+- **Clear usage instructions** and examples
 
-## Windows Installation (install.bat)
+---
+
+## 🪟 Windows Installation (install.bat)
 
 ### Prerequisites
-- Windows 7 SP1 or later
-- Administrator privileges (required)
-- Release files in `../releases/windows/` directory structure
+- Windows 7 SP1 or later (Windows 10/11 recommended)
+- **Administrator privileges** (required)
+- Python 3.8+ (if installing from source)
+- ~500 MB disk space
 
 ### Installation Steps
 
-1. **Extract the installer**: Ensure `install.bat` is in `installers/windows/`
-2. **Run as Administrator**: 
-   - Right-click `install.bat`
-   - Select "Run as administrator"
-3. **Follow the prompts**:
-   - Select version (1-4)
-   - Confirm installation directory
-   - Wait for installation to complete
+1. **Open Command Prompt as Administrator**
+   - Press `Win + R`
+   - Type `cmd`
+   - Right-click and select "Run as administrator"
+
+2. **Navigate to installer**
+   ```cmd
+   cd C:\path\to\vsosh_project\installers\windows
+   ```
+
+3. **Run the installer**
+   ```cmd
+   install.bat
+   ```
+
+4. **Follow the interactive prompts**
+   - Select version: 1-4 (1 is latest, recommended)
+   - Choose installation method:
+     - Option 1: Pre-built executable
+     - Option 2: From source with venv
+   - Confirm installation path
+   - Wait for completion
+
+### Installation Methods
+
+#### Method 1: Pre-built Executable ⚡ (Recommended)
+- **Speed**: Fast (~2-3 minutes)
+- **Size**: ~450 MB per version
+- **Requirements**: No Python needed
+- **Best for**: Most users, quick deployment
+
+```
+Install flow:
+├── Select version
+├── Copy executable from releases\windows\
+├── Create shortcuts and PATH entries
+└── Ready to use!
+```
+
+#### Method 2: From Source with Venv 🔧
+- **Speed**: Slower (~5-10 minutes, depends on internet)
+- **Size**: ~200 MB base + dependencies
+- **Requirements**: Python 3.8+
+- **Best for**: Developers, customization, running latest code
+
+```
+Install flow:
+├── Select version
+├── Create Python virtual environment
+├── Copy source files from src\
+├── Install dependencies from requirements.txt
+├── Create launcher batch file
+└── Ready to use!
+```
 
 ### Installation Locations
 
+**Pre-built installation:**
 ```
 Program Files\LocalAIScanner\
-  ├── LocalAIScanner.bat           (command-line wrapper)
-  └── v1.3\                        (or v1.2, v1.1, v1.0)
-      ├── LocalAIScanner.exe
-      ├── uninstall.bat
-      └── (other files)
+├── v1.3\
+│   ├── LocalAIScanner.exe
+│   ├── uninstall.bat
+│   └── (libraries and data files)
+├── v1.2\
+├── v1.1\
+└── v1.0\
+```
+
+**Source installation:**
+```
+Program Files\LocalAIScanner\
+└── v1.3\
+    ├── source\              (Python source code)
+    │   ├── main.py
+    │   ├── output.py
+    │   └── ...
+    ├── venv\                (Python virtual environment)
+    │   ├── Scripts\
+    │   ├── Lib\
+    │   └── ...
+    ├── LocalAIScanner.bat   (launcher)
+    └── uninstall.bat
 ```
 
 ### After Installation
 
-- Command prompt: `LocalAIScanner model.pkl`
-- Desktop shortcut: Double-click icon on desktop
-- Start menu: Search for "LocalAIScanner"
+**Run from command prompt:**
+```cmd
+LocalAIScanner model.pkl
+LocalAIScanner C:\path\to\models
+LocalAIScanner model.h5 -f json -o report.json
+```
 
-### Uninstall
+**Or use Start Menu shortcut:**
+- Look for "LocalAIScanner" in Start Menu
 
-Run `C:\Program Files\LocalAIScanner\v1.3\uninstall.bat` (or your selected version)
+**Or use the executable directly:**
+```cmd
+"C:\Program Files\LocalAIScanner\v1.3\LocalAIScanner.exe" model.pkl
+```
 
-## Linux Installation (install.sh)
+### Uninstallation
+
+- Run: `C:\Program Files\LocalAIScanner\v1.3\uninstall.bat`
+- Or: Control Panel → Programs → Uninstall
+
+---
+
+## 🐧 Linux Installation (install.sh)
 
 ### Prerequisites
-- Ubuntu 18.04+, Debian 10+, CentOS 7+, or Fedora 30+
+- Linux: Ubuntu 18.04+, Debian 10+, CentOS 7+, or Fedora 30+
 - Bash shell
-- File permissions for `/usr/local` or `~/.local` (depending on root access)
+- Python 3.8+ (if installing from source)
+- ~500 MB disk space
+- Internet connection (for dependencies)
 
 ### Installation Steps
 
-1. **Make script executable**:
+1. **Navigate to installer**
    ```bash
-   chmod +x installers/linux/install.sh
+   cd ~/vsosh_project/installers/linux
    ```
 
-2. **Run the installer**:
+2. **Make script executable** (if needed)
    ```bash
-   sudo ./installers/linux/install.sh     # for system-wide installation
-   # OR
-   ./installers/linux/install.sh          # for user-only installation
+   chmod +x install.sh
    ```
 
-3. **Follow the prompts**:
-   - Select version (1-4)
-   - Confirm installation directory
-   - Wait for installation to complete
+3. **Run the installer**
+   ```bash
+   ./install.sh
+   ```
 
-### Installation Locations
+   Or with sudo for system-wide installation:
+   ```bash
+   sudo ./install.sh
+   ```
 
-**System-wide (with sudo)**:
-```
-/usr/local/share/local-ai-scanner/
-  └── v1.3/                    (or v1.2, v1.1, v1.0)
-      ├── LocalAIScanner
-      ├── uninstall.sh
-      └── (other files)
+4. **Follow the interactive prompts**
+   - Select version: 1-4 (1 is latest)
+   - Choose installation method (1 or 2)
+   - Confirm installation path
+   - Wait for completion
 
-/usr/local/bin/
-  ├── LocalAIScanner           (executable link)
-  └── scan                     (convenience alias)
-```
-
-**User installation**:
-```
-~/.local/share/local-ai-scanner/
-  └── v1.3/
-
-~/.local/bin/
-  ├── LocalAIScanner
-  └── scan
-```
-
-### After Installation
-
-1. **Reload shell**:
+5. **Reload shell configuration**
    ```bash
    source ~/.bashrc
-   # or
+   # or for zsh:
    source ~/.zshrc
    ```
 
-2. **Use the scanner**:
-   ```bash
-   LocalAIScanner model.pkl
-   LocalAIScanner ./models
-   scan model.h5 -v
-   ```
+### Installation Methods
 
-### Uninstall
+#### Method 1: Pre-built Executable ⚡
+- Copies pre-compiled binary from releases
+- No Python required
+- ~450 MB per version
+- **Recommended for most users**
 
-- System-wide: `bash /usr/local/share/local-ai-scanner/v1.3/uninstall.sh`
-- User: `bash ~/.local/share/local-ai-scanner/v1.3/uninstall.sh`
+#### Method 2: From Source with Venv 🔧
+- Creates Python virtual environment
+- Copies source from `src/` directory
+- Installs dependencies from `requirements.txt`
+- Better for development and customization
 
+### Installation Locations
 
-## Adding Custom Versions
-
-To add a new version installer:
-
-1. Create release directory: `releases/windows/1.4/` or `releases/linux/1.4/`
-2. Place executable and files in the directory
-3. Run installer and select the new version
-
-## Troubleshooting
-
-### Windows
-
-**Error: "Administrator privileges required"**
-- Right-click installer and select "Run as administrator"
-
-**Error: "Release files not found"**
-- Ensure `releases/windows/1.3/` directory exists with executable
-- Verify repository structure hasn't changed
-
-**Command not found after installation**
-- Restart command prompt or terminal
-- Verify installation completed successfully
-
-### Linux
-
-**Error: "Permission denied"**
-- Use `sudo ./installers/linux/install.sh` for system-wide installation
-- Or run without sudo to install to `~/.local/`
-
-**Command not found after installation**
-- Run `source ~/.bashrc` to reload shell configuration
-- Verify `~/.local/bin` is in PATH: `echo $PATH`
-
-**Release files not found**
-- Check `releases/windows/` or `releases/linux/` directory
-- Ensure version directories match structure
-
-## Script Features in Detail
-
-### Windows (install.bat)
-
-- **Admin Check**: Verifies administrator privileges before proceeding
-- **Version Selection**: Interactive menu for v1.0-v1.3
-- **Directory Creation**: Creates `Program Files\LocalAIScanner` structure
-- **File Copying**: Uses `xcopy` for reliable copying
-- **Executable Detection**: Finds `LocalAIScanner.exe` or `main.exe`
-- **Batch Wrapper**: Creates wrapper for command-line access
-- **PATH Update**: Uses `setx` to update system PATH (requires admin)
-- **Shortcuts**: Desktop shortcut and Start Menu integration
-- **Uninstaller**: Generates removal script
-- **Verification**: Tests executable functionality
-
-### Linux (install.sh)
-
-- **Privilege Detection**: Checks if running as root
-- **Prefix Selection**: Automatic `/usr/local` or `~/.local` based on privileges
-- **Version Selection**: Interactive menu for v1.0-v1.3
-- **Directory Creation**: Creates installation hierarchy
-- **File Copying**: Recursive copy with error handling
-- **Executable Detection**: Finds appropriate executable format
-- **Wrapper Scripts**: Creates shell wrapper for command-line access
-- **Symlinks**: Convenience alias `scan` command
-- **PATH Configuration**: Updates `.bashrc` and `.zshrc`
-- **Uninstaller**: Generates removal script
-- **Verification**: Tests executable functionality
-
-## Version Information
-
-The installers support all released versions:
-
-- **v1.3**: Latest (directory scanning, 8-metric analysis) - Recommended
-- **v1.2**: Output format enhancements, ZIP support
-- **v1.1**: Improved detection algorithms
-- **v1.0**: Initial release
-
-## Integration with Release Files
-
-The installers expect the following directory structure in the repository:
-
+**User Installation** (without sudo):
 ```
-local-ai-scanner/
-├── installers/
-│   ├── windows/install.bat
-│   └── linux/install.sh
-└── releases/
-    └── windows/
-        ├── 1.0/
-        ├── 1.1/
-        ├── 1.2/
-        └── 1.3/
+~/.local/
+├── share/local-ai-scanner/
+│   └── v1.3/
+│       ├── (executable or source files)
+│       ├── venv/          (if from source)
+│       └── uninstall.sh
+└── bin/
+    ├── LocalAIScanner    (symlink to launcher)
+    └── scan              (shortcut alias)
 ```
 
-Alternative for Linux-specific releases:
+**System Installation** (with sudo):
 ```
-releases/
-└── linux/
-    ├── 1.0/
-    ├── 1.1/
-    ├── 1.2/
-    └── 1.3/
+/usr/local/
+├── share/local-ai-scanner/
+│   └── v1.3/
+│       └── ...
+└── bin/
+    ├── LocalAIScanner
+    └── scan
 ```
 
-## Support
+### After Installation
 
-For installation issues:
+**Run from terminal:**
+```bash
+# Command will be available in PATH after reload
+LocalAIScanner model.pkl
+LocalAIScanner ./models
+LocalAIScanner model.h5 -f json -o report.json
 
-1. Verify the repository structure matches expectations
-2. Ensure release files are in correct directories
-3. Check that executables have proper permissions
-4. Review error messages outputted by installer
-5. Verify system requirements are met
+# Or use the 'scan' alias
+scan model.pt --scan-type security -v
+```
 
-## Security Notes
+**Or call directly:**
+```bash
+~/.local/bin/LocalAIScanner model.pkl
+```
 
-- Installers require administrator privileges (Windows) or sudo (Linux)
-- Files are copied from trusted release directories
-- Installers verify executable functionality before completion
-- Uninstallers safely remove only installed files
+### Uninstallation
 
-## License
+```bash
+bash ~/.local/share/local-ai-scanner/v1.3/uninstall.sh
+```
 
-Installation scripts are provided as part of LOCAL AI SCANNER project.
+---
+
+## 📋 Version Information
+
+| Version | Release | Features |
+|---------|---------|----------|
+| v1.3 | Latest | Directory scanning, multi-file support |
+| v1.2 | Stable | Output format enhancements |
+| v1.1 | Stable | Improved detection algorithms |
+| v1.0 | Initial | Core functionality |
+
+---
+
+## 🔧 Common Tasks
+
+### Switch to Different Version
+
+**Windows:**
+```cmd
+install.bat
+REM Select different version when prompted
+```
+
+**Linux:**
+```bash
+./install.sh
+# Select different version when prompted
+```
+
+### Installing with Source (Manual Method)
+
+If the automatic installer fails, you can manually set up:
+
+**Windows (PowerShell):**
+```powershell
+# Create venv
+python -m venv LocalAIScanner_venv
+.\LocalAIScanner_venv\Scripts\Activate.ps1
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Run
+python src/1.3/main.py model.pkl
+```
+
+**Linux (Bash):**
+```bash
+# Create venv
+python3 -m venv LocalAIScanner_venv
+source LocalAIScanner_venv/bin/activate
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Run
+python src/1.3/main.py model.pkl
+```
+
+### Verify Installation
+
+```cmd
+REM Windows
+LocalAIScanner --help
+
+# Linux
+LocalAIScanner --help
+```
+
+---
+
+## 🆘 Troubleshooting
+
+### Issue: "Administrator privileges required" (Windows)
+
+**Solution**: 
+- Right-click `install.bat`
+- Select "Run as administrator"
+
+### Issue: "Python not found" (Source installation)
+
+**Windows Solution**:
+1. Install Python from https://www.python.org/downloads/
+2. Check "Add Python to PATH" during installation
+3. Restart terminal and try again
+
+**Linux Solution**:
+```bash
+# Ubuntu/Debian
+sudo apt-get install python3 python3-venv
+
+# Fedora/RedHat
+sudo dnf install python3 python3-venv
+```
+
+### Issue: "Release files not found"
+
+**Solution**: 
+- Make sure `releases/windows/` or `releases/linux/` directories exist
+- Check that version folders (1.3, 1.2, etc.) contain files
+- Pre-extract any ZIP archives
+
+### Issue: Command not found after installation
+
+**Windows**:
+- Restart Command Prompt
+- Or add manually to PATH in System Properties → Environment Variables
+
+**Linux**:
+- Run: `source ~/.bashrc`
+- Or restart terminal
+- Or add to PATH manually: `export PATH="~/.local/bin:$PATH"`
+
+### Issue: Permission denied (Linux)
+
+**Solution**:
+```bash
+chmod +x install.sh
+./install.sh
+```
+
+---
+
+## 📖 Additional Resources
+
+- **GitHub Repository**: https://github.com/lfvbdghkjfgm/Local_AI_Scaner/tree/main
+- **System Requirements**: See main README.md
+- **Usage Guide**: Run `LocalAIScanner --help`
+
+---

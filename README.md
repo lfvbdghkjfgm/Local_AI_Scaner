@@ -121,6 +121,24 @@ python main.py model.pkl
 python main.py ./models
 ```
 
+### Option 3: Automated Installers (Easiest)
+
+Interactive installers are available for both Windows and Linux with support for multiple versions and installation methods.
+
+**Windows:**
+```cmd
+cd installers\windows
+install.bat
+```
+
+**Linux:**
+```bash
+chmod +x installers/linux/install.sh
+./installers/linux/install.sh
+```
+
+For more details, see [installers/README.md](installers/README.md).
+
 ## Usage
 
 ### Basic Single File Scanning
