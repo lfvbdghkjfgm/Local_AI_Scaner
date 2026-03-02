@@ -101,8 +101,8 @@ LocalAIScanner.exe ./models
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/local-ai-scanner.git
-cd local-ai-scanner
+git clone https://github.com/lfvbdghkjfgm/local-ai-scanner.git
+cd local-ai-scanner/src
 
 # Create virtual environment (optional but recommended)
 python -m venv venv
@@ -120,6 +120,24 @@ pip install -r requirements.txt
 python main.py model.pkl
 python main.py ./models
 ```
+
+### Option 3: Automated Installers (Easiest)
+
+Interactive installers are available for both Windows and Linux with support for multiple versions and installation methods.
+
+**Windows:**
+```cmd
+cd installers\windows
+install.bat
+```
+
+**Linux:**
+```bash
+chmod +x installers/linux/install.sh
+./installers/linux/install.sh
+```
+
+For more details, see [installers/README.md](installers/README.md).
 
 ## Usage
 
@@ -358,54 +376,6 @@ This scanner is designed to safely handle potentially malicious model files:
 4. **Manual Review**: For CRITICAL ratings, conduct manual code review before use
 5. **Environment Isolation**: Consider running on isolated system for very suspicious files
 
-## Development
-
-### Project Structure
-
-```
-local-ai-scanner/
-├── main.py              # Entry point and CLI
-├── scanner.py           # Core scanning logic
-├── output.py            # Result formatting
-├── safe_loader.py       # Isolated weight analysis
-├── requirements.txt     # Python dependencies
-├── tests/               # Test suite
-├── testdata/            # Sample models for testing
-└── scripts/             # Utility scripts
-```
-
-### Building from Source
-
-```bash
-# Install development dependencies
-pip install -r requirements.txt
-pip install pyinstaller
-
-# Build Windows executable
-pyinstaller --onefile --windowed main.py -n LocalAIScanner
-
-# Build Linux/macOS executable
-pyinstaller --onefile main.py -n LocalAIScanner
-```
-
-### Adding Custom Analysis
-
-The modular architecture enables easy extension. Add custom analysis methods to `scanner.py`:
-
-```python
-def check_custom_threat(self, model_data):
-    # Custom threat detection logic
-    pass
-```
-
-### Testing
-
-Run included test suite:
-
-```bash
-python -m pytest tests/
-python -m pytest tests/test_scanner.py -v
-```
 
 ## Download Releases
 
@@ -443,12 +413,6 @@ python -m pytest tests/test_scanner.py -v
 - [v1.0 Release Notes](RELEASE_v1.0.md) - Initial release
 
 ## Support
-
-### Documentation
-
-- View [ARCHITECTURE_AND_ANALYSIS.md](ARCHITECTURE_AND_ANALYSIS.md) for technical details
-- Check release notes for version-specific information
-- Review test files in `tests/` directory for usage examples
 
 ### Troubleshooting
 
