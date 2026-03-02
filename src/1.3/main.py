@@ -26,6 +26,7 @@ def main():
       %(prog)s ./models  (directory scanning)
       %(prog)s --scan-type full model.h5
       %(prog)s --output-format json model.h5
+      %(prog)s --output-format json --detailed-json model.h5
       %(prog)s --scan-type security --output-file report.json model.pt
       %(prog)s --verbose "username/suspicious-model"
             """
@@ -35,6 +36,8 @@ def main():
                         default='full', help='Scan type (default: full)')
     parser.add_argument('--output-format', '-f', choices=['text', 'json', 'csv'],
                         default='text', help='Output format (default: text)')
+    parser.add_argument('--detailed-json', action='store_true',
+                        help='Include full raw scan data in JSON output (default: summary JSON)')
     parser.add_argument('--output-file', '-o', help='File to save results')
     parser.add_argument('--verbose', '-v', action='store_true',
                         help='Verbose output')
@@ -55,7 +58,7 @@ def main():
         
         if args.output_file:
             if args.output_format == 'json':
-                detailed = formatter.json_format(results)
+                detailed = formatter.json_format(results, detailed=args.detailed_json)
             elif args.output_format == 'csv':
                 detailed = formatter.csv_format(results)
             else:
@@ -63,11 +66,15 @@ def main():
             
             with open(args.output_file, 'w', encoding='utf-8') as f:
                 f.write(detailed)
-            print(f"\nDetailed results saved to: {args.output_file}")
+            if args.output_format != 'json':
+                saved_kind = "Detailed"
+            else:
+                saved_kind = "Detailed" if args.detailed_json else "Summary"
+            print(f"\n{saved_kind} results saved to: {args.output_file}")
         else:
             default_output = f"scan_results_{Path(args.model).name}.txt"
             if args.output_format == 'json':
-                detailed = formatter.json_format(results)
+                detailed = formatter.json_format(results, detailed=args.detailed_json)
                 default_output = f"scan_results_{Path(args.model).name}.json"
             elif args.output_format == 'csv':
                 detailed = formatter.csv_format(results)
@@ -77,7 +84,11 @@ def main():
             
             with open(default_output, 'w', encoding='utf-8') as f:
                 f.write(detailed)
-            print(f"Detailed results saved to: {default_output}")
+            if args.output_format != 'json':
+                saved_kind = "Detailed"
+            else:
+                saved_kind = "Detailed" if args.detailed_json else "Summary"
+            print(f"{saved_kind} results saved to: {default_output}")
         
         overall_risk_level = results.get('overall_risk_level', 'UNKNOWN')
         if overall_risk_level in ['CRITICAL', 'HIGH']:
@@ -90,7 +101,7 @@ def main():
         results = scanner.scan(args.model, args.scan_type)
         
         if args.output_format == 'json':
-            output = formatter.json_format(results)
+            output = formatter.json_format(results, detailed=args.detailed_json)
         elif args.output_format == 'csv':
             output = formatter.csv_format(results)
         else:

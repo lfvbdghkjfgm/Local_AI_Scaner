@@ -171,7 +171,7 @@ class Scanner:
         if not dir_path.exists() or not dir_path.is_dir():
             return {'error': f'Directory not found: {directory}'}
         
-        supported_extensions = {'.pkl', '.pickle', '.pt', '.pth', '.h5', '.keras', '.hdf5', 
+        supported_extensions = {'.pkl', '.pickle', '.pt', '.pth', '.bin', '.h5', '.keras', '.hdf5', 
                                '.safetensors', '.onnx', '.pb', '.zip'}
         
         model_files = []
@@ -273,6 +273,10 @@ class Scanner:
             '.h5': 'keras', '.keras': 'keras', '.hdf5': 'keras', '.safetensors': 'safetensors',
             '.onnx': 'onnx', '.pb': 'tensorflow', '.zip': 'zip_archive'
         }
+        if exts == '.bin':
+            # Common local checkpoint name in HF/transformers repositories.
+            # Treat as PyTorch weights so the file is actively inspected.
+            return 'pytorch'
         return mapping.get(exts, 'unknown')
 
     def file_info(self, in_path: str) -> Dict[str, Any]:

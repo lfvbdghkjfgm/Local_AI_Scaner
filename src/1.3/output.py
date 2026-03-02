@@ -287,8 +287,56 @@ class Outputer:
         return "\n".join(output)
     
     @staticmethod
-    def json_format(results: Dict[str, Any]) -> str:
-        return json.dumps(results, indent=2, ensure_ascii=False)
+    def json_format(results: Dict[str, Any], detailed: bool = False) -> str:
+        payload = results if detailed else Outputer._json_summary(results)
+        return json.dumps(payload, indent=2, ensure_ascii=False)
+
+    @staticmethod
+    def _json_summary(results: Dict[str, Any]) -> Dict[str, Any]:
+        if 'directory' in results:
+            return Outputer._json_summary_directory(results)
+        return Outputer._json_summary_single(results)
+
+    @staticmethod
+    def _json_summary_single(results: Dict[str, Any]) -> Dict[str, Any]:
+        risk = results.get('risk_assessment', {})
+        file_info = results.get('file_info', {})
+        return {
+            'scan_id': results.get('scan_id'),
+            'timestamp': results.get('timestamp'),
+            'path': results.get('path'),
+            'scan_type': results.get('scan_type'),
+            'model_type': results.get('model_type'),
+            'file_info': {
+                'file_size_mb': file_info.get('file_size_mb'),
+                'sha256': file_info.get('sha256')
+            },
+            'risk_assessment': {
+                'level': risk.get('level'),
+                'score': risk.get('score'),
+                'raw_score': risk.get('raw_score'),
+                'scale': risk.get('scale')
+            },
+            'counts': {
+                'warnings': len(results.get('warnings', [])),
+                'errors': len(results.get('errors', [])),
+                'security_issues': len(results.get('security_issues', [])),
+                'backdoor_patterns': len(results.get('backdoor_analysis', {}).get('suspicious_patterns', [])),
+                'recommendations': len(results.get('recommendations', []))
+            }
+        }
+
+    @staticmethod
+    def _json_summary_directory(results: Dict[str, Any]) -> Dict[str, Any]:
+        return {
+            'directory': results.get('directory'),
+            'total_files': results.get('total_files', 0),
+            'scanned_files': results.get('scanned_files', 0),
+            'overall_risk_level': results.get('overall_risk_level'),
+            'overall_risk_score': results.get('overall_risk_score'),
+            'summary': results.get('summary', {}),
+            'statistics': results.get('statistics', {})
+        }
 
     @staticmethod
     def csv_format(results: Dict[str,Any]) -> str:
