@@ -69,17 +69,14 @@ class Scanner:
         default_risk = {
             'format': {'HIGH': 3.0, 'MEDIUM': 2.0, 'LOW': 1.0, 'UNKNOWN': 2.0},
             'weights': {
-                'security_count': 1.4,
-                'backdoor_count': 1.7,
-                'warning_critical': 2.6,
-                'network_ops': 1.8,
-                'system_calls': 2.2,
-                'shadow_logic_score': 2.4,
-                'combination_bonus': 2.5
+                'security_count': 1.2,
+                'backdoor_count': 1.5,
+                'warning_critical': 2.0,
+                'network_ops': 1.5,
+                'system_calls': 1.8
             },
-            'caps': {'security': 9.0, 'backdoor': 8.0, 'critical': 10.0, 'combo': 4.0},
-            'normalize_to': 10.0,
-            'calibration_raw_max': 16.0
+            'caps': {'security': 8.0, 'backdoor': 6.0, 'critical': 8.0},
+            'normalize_to': 10.0
         }
         if risk_config and isinstance(risk_config, dict):
             merged = default_risk.copy()
@@ -171,7 +168,7 @@ class Scanner:
         if not dir_path.exists() or not dir_path.is_dir():
             return {'error': f'Directory not found: {directory}'}
         
-        supported_extensions = {'.pkl', '.pickle', '.pt', '.pth', '.bin', '.h5', '.keras', '.hdf5', 
+        supported_extensions = {'.pkl', '.pickle', '.pt', '.pth', '.h5', '.keras', '.hdf5', 
                                '.safetensors', '.onnx', '.pb', '.zip'}
         
         model_files = []
@@ -273,10 +270,6 @@ class Scanner:
             '.h5': 'keras', '.keras': 'keras', '.hdf5': 'keras', '.safetensors': 'safetensors',
             '.onnx': 'onnx', '.pb': 'tensorflow', '.zip': 'zip_archive'
         }
-        if exts == '.bin':
-            # Common local checkpoint name in HF/transformers repositories.
-            # Treat as PyTorch weights so the file is actively inspected.
-            return 'pytorch'
         return mapping.get(exts, 'unknown')
 
     def file_info(self, in_path: str) -> Dict[str, Any]:
@@ -656,25 +649,14 @@ class Scanner:
                 entropy_anomalies = []
                 for key, stats in tensor_stats.items():
                     param_type = stats.get('param_type', 'weight')
+                    extreme_count = stats.get('extreme_count', 0)
                     unique_ratio = stats.get('unique_ratio', 1.0)
                     kurtosis_val = stats.get('kurtosis', 0.0)
                     skewness_val = abs(stats.get('skewness', 0.0))
                     entropy_val = stats.get('entropy', 0.0)
+                    l2_norm = stats.get('l2_norm', 0.0)
 
-                    if param_type == 'bias':
-                        # Bias tensors can be low-variance in benign models.
-                        if kurtosis_val > 8:
-                            bias_anomalies.append(f'{key}: anomalous bias kurtosis={kurtosis_val:.1f}')
-                            shadow_logic_score += 0.25
-                        if skewness_val > 3:
-                            bias_anomalies.append(f'{key}: asymmetric bias skew={skewness_val:.2f}')
-                            shadow_logic_score += 0.15
-                        if entropy_val > 6.0:
-                            entropy_anomalies.append(f'{key}: high entropy={entropy_val:.2f}')
-                            shadow_logic_score += 0.1
-                        continue
-
-                    if unique_ratio < 0.05:
+                    if unique_ratio < 0.1:
                         weight_anomalies.append(f'{key}: low unique ratio {unique_ratio:.3f}')
                         shadow_logic_score += 0.2
                     if kurtosis_val > 10:
@@ -699,7 +681,7 @@ class Scanner:
                     backdoor_checks['suspicious_patterns'].append(f'High entropy detected in {len(entropy_anomalies)} tensors (potential data hiding)')
 
                 if shadow_logic_score > 0.5:
-                    backdoor_checks['suspicious_patterns'].append(f'Shadow logic score: {shadow_logic_score:.2f} (analyzed {total_tensors} tensors)')
+                    backdoor_checks['suspicious_patterns'].append(f'📊 Shadow logic score: {shadow_logic_score:.2f} (analyzed {total_tensors} tensors)')
                     backdoor_checks['recommendations'].append('Perform behavioral testing with adversarial inputs')
 
             elif model_type == 'keras' and HAS_TENSORFLOW:
@@ -750,7 +732,7 @@ class Scanner:
                             backdoor_checks['suspicious_patterns'].append(f'  {layer_name}[{w_type}]: {", ".join(issues)}')
 
                     if shadow_logic_score > 0.4:
-                        backdoor_checks['suspicious_patterns'].append(f'Shadow logic score: {shadow_logic_score:.2f} (analyzed {total_layers} layers)')
+                        backdoor_checks['suspicious_patterns'].append(f'📊 Shadow logic score: {shadow_logic_score:.2f} (analyzed {total_layers} layers)')
                         backdoor_checks['recommendations'].append('Verify predictions on test data and adversarial samples')
 
         except Exception as e:
@@ -759,7 +741,7 @@ class Scanner:
     def check_anomalous_behavior(self, model_path: str, model_type: str, backdoor_checks: dict):
         backdoor_checks['performed_checks'].append('anomalous_behavior')
         if model_type in ['keras', 'pytorch'] and self.is_computer_vision_model(model_path, model_type):
-            backdoor_checks['suspicious_patterns'].append('CV model - test with patch triggers')
+            backdoor_checks['suspicious_patterns'].append('CV model — test with patch triggers')
             backdoor_checks['recommendations'].append('Run trigger patch tests')
 
     def is_computer_vision_model(self, model_path: str, model_type: str) -> bool:
@@ -810,90 +792,67 @@ class Scanner:
         format_contrib = float(fmt_scores.get(format_risk, fmt_scores.get('UNKNOWN', 2.0)))
 
         security = self.results.get('security_issues', [])
-        security_contrib = min(len(security) * float(w.get('security_count', 1.4)), float(caps.get('security', 9.0)))
+        security_contrib = min(len(security) * float(w.get('security_count', 1.2)), float(caps.get('security', 8.0)))
 
         back = self.results.get('backdoor_analysis', {})
         susp = back.get('suspicious_patterns', [])
-        backdoor_contrib = min(len(susp) * float(w.get('backdoor_count', 1.7)), float(caps.get('backdoor', 8.0)))
+        backdoor_contrib = min(len(susp) * float(w.get('backdoor_count', 1.5)), float(caps.get('backdoor', 6.0)))
 
-        trojan_keywords = ['known trojan signature', 'reverse_shell', 'bind_shell', 'meterpreter', 'beacon', 'cobalt_strike', 'web_delivery']
-        network_keywords = ['network operations', 'http', 'https', 'socket', 'request', 'connect', 'urlopen', 'wget', 'curl']
-        system_keywords = ['dangerous system call', 'dangerous call in pickle', 'os.', 'subprocess', 'eval', 'exec', '__import__']
-        shadow_keywords = ['shadow logic score', 'multiple weight anomalies', 'high entropy detected', 'potential shadow logic marker']
-
-        # Deduplicate repeated signals between warnings/security/backdoor blocks.
-        seen_messages = set()
-        for msg in self.results.get('warnings', []):
-            low = str(msg).strip().lower()
-            if low:
-                seen_messages.add(low)
-        for issue in security:
-            low = str(issue).strip().lower()
-            if low:
-                seen_messages.add(low)
-        for pattern in susp:
-            low = str(pattern).strip().lower()
-            if low:
-                seen_messages.add(low)
-
-        trojan_sigs_count = sum(1 for msg in seen_messages if any(k in msg for k in trojan_keywords))
-        network_ops_count = sum(1 for msg in seen_messages if any(k in msg for k in network_keywords))
-        system_calls_count = sum(1 for msg in seen_messages if any(k in msg for k in system_keywords))
-        shadow_logic_signal_count = sum(1 for msg in seen_messages if any(k in msg for k in shadow_keywords))
-        cv_trigger_count = sum(1 for msg in seen_messages if 'patch triggers' in msg)
 
         critical_raw = 0.0
-        critical_raw += trojan_sigs_count * float(w.get('warning_critical', 2.6))
-        critical_raw += network_ops_count * float(w.get('network_ops', 1.8))
-        critical_raw += system_calls_count * float(w.get('system_calls', 2.2))
-        critical_raw += shadow_logic_signal_count * float(w.get('shadow_logic_score', 2.4))
-        critical_raw += cv_trigger_count * 0.8
-        critical_contrib = min(critical_raw, float(caps.get('critical', 10.0)))
+        network_ops_count = 0
+        system_calls_count = 0
+        trojan_sigs_count = 0
+        for msg in self.results.get('warnings', []):
+            msg_lower = msg.lower()
+            if 'known trojan signature' in msg_lower or any(k in msg_lower for k in ['reverse_shell', 'beacon', 'meterpreter']):
+                critical_raw += float(w.get('warning_critical', 2.0))
+                trojan_sigs_count += 1
+            elif any(k in msg_lower for k in ['network operations', 'http', 'socket', 'request', 'connect', 'urlopen']):
+                critical_raw += float(w.get('network_ops', 1.5))
+                network_ops_count += 1
+            elif any(k in msg_lower for k in ['dangerous system call', 'dangerous call in pickle', 'os.', 'subprocess', 'eval', 'exec', 'import os']):
+                critical_raw += float(w.get('system_calls', 1.8))
+                system_calls_count += 1
+        for issue in self.results.get('security_issues', []):
+            issue_lower = issue.lower()
+            if 'known trojan' in issue_lower:
+                critical_raw += float(w.get('warning_critical', 2.0))
+                trojan_sigs_count += 1
+            elif any(k in issue_lower for k in ['network operations']):
+                if network_ops_count == 0:
+                    critical_raw += float(w.get('network_ops', 1.5))
+                    network_ops_count += 1
+            elif 'dangerous system call' in issue_lower:
+                if system_calls_count < len(security):
+                    critical_raw += float(w.get('system_calls', 1.8))
+                    system_calls_count += 1
 
-        combo_bonus = 0.0
-        combo_w = float(w.get('combination_bonus', 2.5))
-        if trojan_sigs_count > 0 and shadow_logic_signal_count > 0:
-            combo_bonus += combo_w
-        if (network_ops_count + system_calls_count) >= 2:
-            combo_bonus += combo_w * 0.7
-        if len(security) >= 3 and len(susp) >= 2:
-            combo_bonus += combo_w * 0.8
-        combo_bonus = min(combo_bonus, float(caps.get('combo', 4.0)))
+        critical_contrib = min(critical_raw, float(caps.get('critical', 8.0)))
 
-        raw_score = format_contrib + security_contrib + backdoor_contrib + critical_contrib + combo_bonus
+        raw_score = format_contrib + security_contrib + backdoor_contrib + critical_contrib
 
         normalize_to = float(self.risk_config.get('normalize_to', 10.0))
-        calibration_raw_max = float(self.risk_config.get('calibration_raw_max', 16.0))
-        if calibration_raw_max <= 0:
+        max_possible = float(caps.get('security', 8.0)) + float(caps.get('backdoor', 6.0)) + float(caps.get('critical', 8.0)) + max(fmt_scores.values())
+        if max_possible <= 0:
             normalized = 0.0
         else:
-            normalized = round(min(raw_score, calibration_raw_max) / calibration_raw_max * normalize_to, 2)
+            normalized = round(min(raw_score, max_possible) / max_possible * normalize_to, 2)
 
-        if normalized >= 8.5:
+        if normalized >= (0.9 * normalize_to):
             level = 'CRITICAL'
-        elif normalized >= 6.0:
+        elif normalized >= (0.65 * normalize_to):
             level = 'HIGH'
-        elif normalized >= 3.5:
+        elif normalized >= (0.4 * normalize_to):
             level = 'MEDIUM'
         else:
             level = 'LOW'
-
-        # Enforce minimum severity for high-confidence threat indicators.
-        if trojan_sigs_count > 0 and level == 'LOW':
-            level = 'HIGH'
-            normalized = max(normalized, 6.0)
-        if shadow_logic_signal_count >= 2 and level == 'LOW':
-            level = 'MEDIUM'
-            normalized = max(normalized, 3.5)
-        if trojan_sigs_count >= 2 and (network_ops_count + system_calls_count) >= 1:
-            level = 'CRITICAL'
-            normalized = max(normalized, 8.5)
 
         self.results['risk_assessment'] = {
             'raw_score': round(raw_score, 3),
             'score': normalized,
             'scale': normalize_to,
-            'max_possible': round(calibration_raw_max, 3),
+            'max_possible': round(max_possible, 3),
             'level': level,
             'warnings_count': warnings_count,
             'errors_count': errors_count,
@@ -904,11 +863,9 @@ class Scanner:
                 'security_threats': round(security_contrib, 3),
                 'backdoor_patterns': round(backdoor_contrib, 3),
                 'critical_threats': round(critical_contrib, 3),
-                'combination_bonus': round(combo_bonus, 3),
                 'trojan_signatures': trojan_sigs_count,
                 'network_operations': network_ops_count,
-                'system_calls': system_calls_count,
-                'shadow_logic_signals': shadow_logic_signal_count
+                'system_calls': system_calls_count
             }
         }
 
