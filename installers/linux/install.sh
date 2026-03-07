@@ -20,28 +20,33 @@ fi
 
 # Get installation version from user
 echo "Available versions:"
-echo " [1] v1.3 Latest (Recommended)"
-echo " [2] v1.2"
-echo " [3] v1.1"
-echo " [4] v1.0"
+echo " [1] v1.4 Latest (Recommended)"
+echo " [2] v1.3"
+echo " [3] v1.2"
+echo " [4] v1.1"
+echo " [5] v1.0"
 echo ""
-read -p "Select version (1-4, default is 1): " VERSION
+read -p "Select version (1-5, default is 1): " VERSION
 VERSION=${VERSION:-1}
 
 case "$VERSION" in
     1)
+        VERSION_NUM="1.4"
+        RELEASE_DIR="1.4"
+        ;;
+    2)
         VERSION_NUM="1.3"
         RELEASE_DIR="1.3"
         ;;
-    2)
+    3)
         VERSION_NUM="1.2"
         RELEASE_DIR="1.2"
         ;;
-    3)
+    4)
         VERSION_NUM="1.1"
         RELEASE_DIR="1.1"
         ;;
-    4)
+    5)
         VERSION_NUM="1.0"
         RELEASE_DIR="1.0"
         ;;
@@ -54,11 +59,11 @@ esac
 # Choose installation method
 echo ""
 echo "Installation method:"
-echo " [1] Pre-built executable (Recommended - fast)"
-echo " [2] From source with venv (Requires Python)"
+echo " [1] Pre-built executable (fast)"
+echo " [2] From source with venv (Recommended)"
 echo ""
-read -p "Select method (1-2, default is 1): " INSTALL_METHOD
-INSTALL_METHOD=${INSTALL_METHOD:-1}
+read -p "Select method (1-2, default is 2): " INSTALL_METHOD
+INSTALL_METHOD=${INSTALL_METHOD:-2}
 
 case "$INSTALL_METHOD" in
     1)
@@ -76,6 +81,10 @@ esac
 # Define installation paths
 INSTALL_PATH="$INSTALL_PREFIX/share/local-ai-scanner/v$VERSION_NUM"
 BIN_PATH="$INSTALL_PREFIX/bin"
+COMMAND_NAME="local-ai-scanner"
+COMMAND_ALIAS="las"
+COMMAND_ALT="local-ai-scaner"
+COMMAND_PATH="$BIN_PATH/$COMMAND_NAME"
 
 echo ""
 echo "Installation details:"
@@ -95,8 +104,9 @@ fi
 # Set error handling
 set -e
 
-# Get script directory
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# Resolve directories
+INSTALLER_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+BASE_DIR="$(cd "$INSTALLER_DIR/../.." && pwd)"
 
 # Create directories
 echo ""
@@ -110,24 +120,25 @@ if [ "$METHOD" = "RELEASE" ]; then
     echo "Installing from pre-built release..."
     
     # Try Linux release first, then Windows
-    RELEASE_PATH="$SCRIPT_DIR/releases/linux"
+    RELEASE_PATH="$BASE_DIR/releases/$RELEASE_DIR/linux"
     
-    if [ ! -d "$RELEASE_PATH/$RELEASE_DIR" ]; then
-        RELEASE_PATH="$SCRIPT_DIR/releases/windows"
+    if [ ! -d "$RELEASE_PATH" ]; then
+        RELEASE_PATH="$BASE_DIR/releases/$RELEASE_DIR/windows"
     fi
     
-    if [ ! -d "$RELEASE_PATH/$RELEASE_DIR" ]; then
+    if [ ! -d "$RELEASE_PATH" ]; then
         echo ""
         echo "Error: Release files not found"
         echo "Checked paths:"
-        echo "  - $SCRIPT_DIR/releases/linux/$RELEASE_DIR"
-        echo "  - $SCRIPT_DIR/releases/windows/$RELEASE_DIR"
+        echo "  - $BASE_DIR/releases/$RELEASE_DIR/linux"
+        echo "  - $BASE_DIR/releases/$RELEASE_DIR/windows"
+        echo "Tip: Use method [2] (source install) if release artifacts are not available."
         echo ""
         exit 1
     fi
     
-    echo "Copying files from: $RELEASE_PATH/$RELEASE_DIR"
-    cp -r "$RELEASE_PATH/$RELEASE_DIR"/* "$INSTALL_PATH/" 2>/dev/null || {
+    echo "Copying files from: $RELEASE_PATH"
+    cp -r "$RELEASE_PATH"/* "$INSTALL_PATH/" 2>/dev/null || {
         echo "Error: Failed to copy files"
         exit 1
     }
@@ -177,7 +188,7 @@ if [ "$METHOD" = "SOURCE" ]; then
     source "$INSTALL_PATH/venv/bin/activate"
     
     # Copy source files
-    SRC_PATH="$SCRIPT_DIR/src/$RELEASE_DIR"
+    SRC_PATH="$BASE_DIR/src/$RELEASE_DIR"
     
     if [ ! -d "$SRC_PATH" ]; then
         echo ""
@@ -188,6 +199,7 @@ if [ "$METHOD" = "SOURCE" ]; then
     fi
     
     echo "Copying source files..."
+    mkdir -p "$INSTALL_PATH/source"
     cp -r "$SRC_PATH"/* "$INSTALL_PATH/source/" 2>/dev/null || {
         echo "Error: Failed to copy source files"
         deactivate 2>/dev/null || true
@@ -196,10 +208,11 @@ if [ "$METHOD" = "SOURCE" ]; then
     
     # Install requirements
     echo "Installing Python dependencies..."
-    REQUIREMENTS="$SCRIPT_DIR/requirements.txt"
+    REQUIREMENTS="$BASE_DIR/requirements.txt"
     
     if [ -f "$REQUIREMENTS" ]; then
-        pip install -q -r "$REQUIREMENTS" || {
+        echo "Installing Python dependencies (progress shown below)..."
+        pip install --progress-bar on -r "$REQUIREMENTS" || {
             echo "Warning: Some dependencies failed to install"
             echo "You may need to install them manually"
         }
@@ -207,47 +220,76 @@ if [ "$METHOD" = "SOURCE" ]; then
         echo "Warning: requirements.txt not found"
     fi
     
-    # Create wrapper script
-    echo "Creating wrapper script..."
-    EXE_FILE="$BIN_PATH/LocalAIScanner"
-    cat > "$EXE_FILE" << 'SCRIPT_EOF'
-#!/bin/bash
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-# Find the install directory
-INSTALL_DIR=$(find "$SCRIPT_DIR" -name "venv" -type d 2>/dev/null | head -1 | sed 's/\/venv.*//')
-if [ -z "$INSTALL_DIR" ]; then
-    INSTALL_DIR=$(dirname "$(python3 -c 'import site; print(site.getsitepackages()[0])' 2>/dev/null)")
-fi
-source "$INSTALL_DIR/venv/bin/activate" 2>/dev/null || true
-cd "$INSTALL_DIR/source" 2>/dev/null || cd "$INSTALL_DIR" 2>/dev/null
-python main.py "$@"
-SCRIPT_EOF
-    
-    chmod +x "$EXE_FILE"
-    
     # Deactivate venv
     deactivate 2>/dev/null || true
 fi
 
-# Create symlink shortcut
-ln -sf "$EXE_FILE" "$BIN_PATH/scan" 2>/dev/null || true
+# Create global launcher command
+echo ""
+echo "Creating global command launcher: $COMMAND_NAME"
+if [ "$METHOD" = "SOURCE" ]; then
+    cat > "$COMMAND_PATH" << EOF
+#!/bin/bash
+INSTALL_DIR="$INSTALL_PATH"
+SRC_DIR="\$INSTALL_DIR/source"
+PY_EXE="\$INSTALL_DIR/venv/bin/python"
+if [ ! -d "\$SRC_DIR" ]; then
+    echo "Install directory not found: \$SRC_DIR" >&2
+    exit 1
+fi
+if [ ! -x "\$PY_EXE" ]; then
+    echo "Python runtime not found: \$PY_EXE" >&2
+    exit 1
+fi
+if [ ! -f "\$SRC_DIR/main.py" ]; then
+    echo "main.py not found in \$SRC_DIR" >&2
+    exit 1
+fi
+(
+    cd "\$SRC_DIR" || exit 1
+    "\$PY_EXE" main.py "\$@"
+)
+exit \$?
+EOF
+else
+    cat > "$COMMAND_PATH" << EOF
+#!/bin/bash
+TARGET_EXE="$EXE_FILE"
+if [ ! -f "\$TARGET_EXE" ]; then
+    echo "Installed executable not found: \$TARGET_EXE" >&2
+    exit 1
+fi
+exec "\$TARGET_EXE" "\$@"
+EOF
+fi
+chmod +x "$COMMAND_PATH"
+
+# Backward-compatible aliases
+ln -sf "$COMMAND_PATH" "$BIN_PATH/$COMMAND_ALIAS" 2>/dev/null || true
+ln -sf "$COMMAND_PATH" "$BIN_PATH/$COMMAND_ALT" 2>/dev/null || true
+ln -sf "$COMMAND_PATH" "$BIN_PATH/local-ai-scanner" 2>/dev/null || true
+ln -sf "$COMMAND_PATH" "$BIN_PATH/LocalAIScanner" 2>/dev/null || true
+ln -sf "$COMMAND_PATH" "$BIN_PATH/scan" 2>/dev/null || true
 
 # Add to PATH
 echo ""
 echo "Configuring PATH..."
-SHELL_RC=""
-if [ -f "$HOME/.bashrc" ]; then
-    SHELL_RC="$HOME/.bashrc"
+if ! echo "$PATH" | tr ':' '\n' | grep -Fxq "$BIN_PATH"; then
+    export PATH="$BIN_PATH:$PATH"
 fi
 
-if [ -n "$SHELL_RC" ] && ! grep -q "$BIN_PATH" "$SHELL_RC" 2>/dev/null; then
-    echo "export PATH=\"$BIN_PATH:\$PATH\"" >> "$SHELL_RC"
-    echo "Added $BIN_PATH to ~/.bashrc"
-fi
+if [ "$INSTALL_TYPE" = "user" ]; then
+    if [ -f "$HOME/.bashrc" ] && ! grep -q "$BIN_PATH" "$HOME/.bashrc" 2>/dev/null; then
+        echo "export PATH=\"$BIN_PATH:\$PATH\"" >> "$HOME/.bashrc"
+        echo "Added $BIN_PATH to ~/.bashrc"
+    fi
 
-if [ -f "$HOME/.zshrc" ] && ! grep -q "$BIN_PATH" "$HOME/.zshrc" 2>/dev/null; then
-    echo "export PATH=\"$BIN_PATH:\$PATH\"" >> "$HOME/.zshrc"
-    echo "Added $BIN_PATH to ~/.zshrc"
+    if [ -f "$HOME/.zshrc" ] && ! grep -q "$BIN_PATH" "$HOME/.zshrc" 2>/dev/null; then
+        echo "export PATH=\"$BIN_PATH:\$PATH\"" >> "$HOME/.zshrc"
+        echo "Added $BIN_PATH to ~/.zshrc"
+    fi
+else
+    echo "Using system install. Ensure /usr/local/bin is in PATH."
 fi
 
 # Create uninstaller
@@ -256,6 +298,10 @@ cat > "$UNINSTALL_SCRIPT" << EOF
 #!/bin/bash
 echo "Removing LOCAL AI SCANNER v$VERSION_NUM..."
 rm -rf "$INSTALL_PATH"
+rm -f "$COMMAND_PATH"
+rm -f "$BIN_PATH/$COMMAND_ALIAS"
+rm -f "$BIN_PATH/$COMMAND_ALT"
+rm -f "$BIN_PATH/local-ai-scanner"
 rm -f "$BIN_PATH/LocalAIScanner"
 rm -f "$BIN_PATH/scan"
 echo "Uninstallation complete"
@@ -278,12 +324,13 @@ fi
 echo ""
 echo "To use the scanner:"
 echo "  1. Reload shell: source ~/.bashrc"
-echo "  2. Run: LocalAIScanner [options] PATH"
+echo "  2. Run: $COMMAND_NAME or $COMMAND_ALIAS [options] PATH"
 echo ""
 echo "Examples:"
-echo "  LocalAIScanner model.pkl"
-echo "  LocalAIScanner ./models"
-echo "  LocalAIScanner ./model.h5 -f json -o report.json"
+echo "  $COMMAND_NAME model.pkl"
+echo "  $COMMAND_NAME ./models"
+echo "  $COMMAND_NAME ./model.h5 -f json -o report.json"
+echo "  $COMMAND_ALIAS ./models --scan-type security"
 echo "  scan model.pt --scan-type security -v"
 echo ""
 echo "Installation type: $INSTALL_TYPE"
