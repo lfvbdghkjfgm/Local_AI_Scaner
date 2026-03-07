@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 
-from scanner import Scanner
-from output import Outputer
 import argparse
+import os
 import sys
 import warnings
 from pathlib import Path
@@ -31,7 +30,7 @@ def main():
       %(prog)s --verbose "username/suspicious-model"
             """
     )
-    parser.add_argument('model', help='Path to model file, directory, or HuggingFace model ID')
+    parser.add_argument('model', nargs='?', help='Path to model file, directory, or HuggingFace model ID')
     parser.add_argument('--scan-type', choices=['full', 'format', 'security', 'backdoor'],
                         default='full', help='Scan type (default: full)')
     parser.add_argument('--output-format', '-f', choices=['text', 'json', 'csv'],
@@ -43,6 +42,14 @@ def main():
                         help='Verbose output')
 
     args = parser.parse_args()
+    if not args.model:
+        parser.print_help()
+        return 0
+
+    # Reduce TensorFlow startup noise in CLI output.
+    os.environ.setdefault('TF_CPP_MIN_LOG_LEVEL', '2')
+    from scanner import Scanner
+    from output import Outputer
     scanning_start_style()
 
     path = Path(args.model)
