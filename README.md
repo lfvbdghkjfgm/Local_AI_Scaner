@@ -81,13 +81,21 @@ Installers are in:
 After installer-based setup, the scanner is available globally as:
 
 ```text
-local-ai-scaner
+local-ai-scanner
 ```
 
 This command works for both installation modes:
 
 - pre-built executable install (`RELEASE`)
 - source + virtualenv install (`SOURCE`)
+
+Also available:
+
+- `las`
+- `local-ai-scaner` (compatibility alias)
+
+Installers download required files from internet by default, so a full local repository copy is not required.
+To override source URL (fork/mirror), set environment variable `LAS_REPO_ZIP_URL`.
 
 ## Output and interpretation
 

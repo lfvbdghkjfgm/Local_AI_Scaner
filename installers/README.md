@@ -10,13 +10,18 @@ This folder contains interactive installers for LOCAL AI SCANNER:
 After successful install, the scanner can be started from any directory with:
 
 ```text
-local-ai-scaner
+local-ai-scanner
 ```
 
 This applies to both installer modes:
 
 - `RELEASE` (pre-built executable)
 - `SOURCE` (source code + virtual environment)
+
+Also available:
+
+- `las`
+- `local-ai-scaner` (compatibility alias)
 
 ## Version strategy
 
@@ -48,7 +53,8 @@ install.bat
 What it does:
 
 - installs selected version
-- creates launcher `local-ai-scaner.bat`
+- downloads required files from internet (temporary cache)
+- creates launchers `local-ai-scanner.bat`, `las.bat`, `local-ai-scaner.bat`
 - adds install directory to system `PATH`
 - creates uninstaller in the installed version folder
 
@@ -75,9 +81,24 @@ Install paths:
 What it does:
 
 - installs selected version
-- creates global launcher `local-ai-scaner` in `<prefix>/bin`
+- downloads required files from internet (temporary cache)
+- creates global launchers `local-ai-scanner`, `las`, `local-ai-scaner` in `<prefix>/bin`
 - updates PATH for user installs (`.bashrc`/`.zshrc`)
 - creates uninstaller in the installed version folder
+
+## Internet source URL
+
+Installers download repository archive from GitHub by default.
+
+To use another source (fork/mirror), set:
+
+- `LAS_REPO_ZIP_URL`
+
+Example:
+
+```bash
+export LAS_REPO_ZIP_URL="https://github.com/<owner>/<repo>/archive/refs/heads/main.zip"
+```
 
 ## Progress for dependency install
 

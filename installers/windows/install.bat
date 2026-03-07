@@ -3,6 +3,7 @@ setlocal enabledelayedexpansion
 
 REM LOCAL AI SCANNER - Windows Installer
 REM Supports pre-built executables or installation from source with venv
+REM Downloads required files from internet (no local repository needed)
 
 echo.
 echo =====================================================
@@ -20,9 +21,12 @@ if %errorlevel% neq 0 (
     exit /b 1
 )
 
-REM Resolve project root relative to this script location
-set "SCRIPT_DIR=%~dp0"
-for %%A in ("%SCRIPT_DIR%..\..") do set "BASE_DIR=%%~fA"
+set "DEFAULT_REPO_ZIP_URL=https://github.com/lfvbdghkjfgm/Local_AI_Scaner/archive/refs/heads/main.zip"
+set "REPO_ZIP_URL=%DEFAULT_REPO_ZIP_URL%"
+if not "%LAS_REPO_ZIP_URL%"=="" set "REPO_ZIP_URL=%LAS_REPO_ZIP_URL%"
+set "REMOTE_TMP_DIR="
+set "REMOTE_ZIP="
+set "REMOTE_BASE_DIR="
 
 REM Get installation version from user
 :VERSION_LOOP
@@ -108,6 +112,20 @@ if /i "!CONFIRM!"=="no" (
     exit /b 0
 )
 
+echo.
+echo Downloading required files from internet...
+echo Source URL: !REPO_ZIP_URL!
+call :FETCH_REMOTE_REPO
+if errorlevel 1 (
+    echo Error: Failed to download and prepare installation sources.
+    echo You can override the URL with environment variable LAS_REPO_ZIP_URL.
+    call :CLEANUP_REMOTE
+    pause
+    exit /b 1
+)
+set "BASE_DIR=!REMOTE_BASE_DIR!"
+echo Using downloaded package: !BASE_DIR!
+
 REM Create installation directory
 echo.
 echo Creating installation directories...
@@ -133,10 +151,11 @@ if "!METHOD!"=="RELEASE" (
         echo !RELEASE_PATH!
         echo.
         echo Please ensure:
-        echo - The releases folder exists in the installation package
-        echo - Windows builds are located at releases\VERSION\windows\
-        echo - Or choose method [2] From source with venv for versions without pre-built files
+        echo - The selected version has release files at releases\VERSION\windows\
+        echo - Or choose method [2] From source with venv
+        echo - Or override URL with LAS_REPO_ZIP_URL
         echo.
+        call :CLEANUP_REMOTE
         pause
         exit /b 1
     )
@@ -218,6 +237,8 @@ if "!METHOD!"=="SOURCE" (
         echo Error: Source files not found at:
         echo !SRC_PATH!
         echo.
+        echo You can override source URL with LAS_REPO_ZIP_URL.
+        call :CLEANUP_REMOTE
         pause
         exit /b 1
     )
@@ -377,7 +398,32 @@ echo Also available as: !COMMAND_ALIAS! and !COMMAND_ALT!
 echo Launcher path: !COMMAND_PATH!
 echo To uninstall, run: "!INSTALL_PATH!\uninstall.bat"
 echo.
+call :CLEANUP_REMOTE
 pause
+exit /b 0
+
+:FETCH_REMOTE_REPO
+set "REMOTE_TMP_DIR=%TEMP%\las_repo_%RANDOM%_%RANDOM%"
+set "REMOTE_ZIP=%TEMP%\las_repo_%RANDOM%_%RANDOM%.zip"
+if exist "!REMOTE_TMP_DIR!" rmdir /s /q "!REMOTE_TMP_DIR!" >nul 2>&1
+if exist "!REMOTE_ZIP!" del /f /q "!REMOTE_ZIP!" >nul 2>&1
+powershell -NoProfile -ExecutionPolicy Bypass -Command ^
+  "$ErrorActionPreference='Stop';" ^
+  "Invoke-WebRequest -Uri '!REPO_ZIP_URL!' -OutFile '!REMOTE_ZIP!';" ^
+  "Expand-Archive -Path '!REMOTE_ZIP!' -DestinationPath '!REMOTE_TMP_DIR!' -Force"
+if errorlevel 1 exit /b 1
+set "REMOTE_BASE_DIR="
+for /d %%D in ("!REMOTE_TMP_DIR!\*") do (
+    if not defined REMOTE_BASE_DIR set "REMOTE_BASE_DIR=%%~fD"
+)
+if not defined REMOTE_BASE_DIR exit /b 1
+if not exist "!REMOTE_BASE_DIR!\src" exit /b 1
+if not exist "!REMOTE_BASE_DIR!\requirements.txt" exit /b 1
+exit /b 0
+
+:CLEANUP_REMOTE
+if defined REMOTE_ZIP if exist "!REMOTE_ZIP!" del /f /q "!REMOTE_ZIP!" >nul 2>&1
+if defined REMOTE_TMP_DIR if exist "!REMOTE_TMP_DIR!" rmdir /s /q "!REMOTE_TMP_DIR!" >nul 2>&1
 exit /b 0
 
 :ADD_TO_SYSTEM_PATH

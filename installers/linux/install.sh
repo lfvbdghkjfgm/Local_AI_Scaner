@@ -18,6 +18,65 @@ else
     INSTALL_TYPE="system"
 fi
 
+cleanup_download() {
+    if [ -n "${DOWNLOAD_TMP_DIR:-}" ] && [ -d "$DOWNLOAD_TMP_DIR" ]; then
+        rm -rf "$DOWNLOAD_TMP_DIR" 2>/dev/null || true
+    fi
+}
+
+download_repo_archive() {
+    DOWNLOAD_TMP_DIR="$(mktemp -d -t las_repo_XXXXXX)" || return 1
+    ARCHIVE_PATH="$DOWNLOAD_TMP_DIR/repo.zip"
+
+    echo "Downloading installation package from:"
+    echo "  $REPO_ZIP_URL"
+
+    if command -v curl >/dev/null 2>&1; then
+        curl -fsSL "$REPO_ZIP_URL" -o "$ARCHIVE_PATH" || return 1
+    elif command -v wget >/dev/null 2>&1; then
+        wget -qO "$ARCHIVE_PATH" "$REPO_ZIP_URL" || return 1
+    elif command -v python3 >/dev/null 2>&1; then
+        python3 - "$REPO_ZIP_URL" "$ARCHIVE_PATH" << 'PY'
+import sys, urllib.request
+url, out_path = sys.argv[1], sys.argv[2]
+with urllib.request.urlopen(url, timeout=120) as r, open(out_path, "wb") as f:
+    f.write(r.read())
+PY
+    else
+        echo "Error: curl/wget/python3 is required to download files."
+        return 1
+    fi
+
+    if command -v unzip >/dev/null 2>&1; then
+        unzip -q "$ARCHIVE_PATH" -d "$DOWNLOAD_TMP_DIR" || return 1
+    elif command -v python3 >/dev/null 2>&1; then
+        python3 - "$ARCHIVE_PATH" "$DOWNLOAD_TMP_DIR" << 'PY'
+import sys, zipfile
+archive, out_dir = sys.argv[1], sys.argv[2]
+with zipfile.ZipFile(archive, "r") as zf:
+    zf.extractall(out_dir)
+PY
+    else
+        echo "Error: unzip or python3 is required to extract archive."
+        return 1
+    fi
+
+    BASE_DIR=""
+    for d in "$DOWNLOAD_TMP_DIR"/*; do
+        if [ -d "$d" ]; then
+            BASE_DIR="$d"
+            break
+        fi
+    done
+
+    if [ -z "$BASE_DIR" ] || [ ! -d "$BASE_DIR/src" ] || [ ! -f "$BASE_DIR/requirements.txt" ]; then
+        echo "Error: downloaded package has unexpected structure."
+        return 1
+    fi
+
+    return 0
+}
+
 # Get installation version from user
 echo "Available versions:"
 echo " [1] v1.4 Latest (Recommended)"
@@ -104,15 +163,22 @@ fi
 # Set error handling
 set -e
 
-# Resolve directories
-INSTALLER_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-BASE_DIR="$(cd "$INSTALLER_DIR/../.." && pwd)"
-if [ ! -d "$BASE_DIR/src" ] && [ -d "$INSTALLER_DIR/src" ]; then
-    BASE_DIR="$INSTALLER_DIR"
+# Download required files from internet
+DEFAULT_REPO_ZIP_URL="https://github.com/lfvbdghkjfgm/Local_AI_Scaner/archive/refs/heads/main.zip"
+REPO_ZIP_URL="${LAS_REPO_ZIP_URL:-$DEFAULT_REPO_ZIP_URL}"
+BASE_DIR=""
+DOWNLOAD_TMP_DIR=""
+
+echo ""
+if ! download_repo_archive; then
+    echo ""
+    echo "Error: Failed to download installation sources."
+    echo "Set LAS_REPO_ZIP_URL to override source URL if needed."
+    cleanup_download
+    exit 1
 fi
-if [ ! -d "$BASE_DIR/src" ] && [ -d "$PWD/src" ]; then
-    BASE_DIR="$PWD"
-fi
+trap cleanup_download EXIT
+echo "Using downloaded package: $BASE_DIR"
 
 # Create directories
 echo ""
@@ -138,20 +204,8 @@ if [ "$METHOD" = "RELEASE" ]; then
         echo "Checked paths:"
         echo "  - $BASE_DIR/releases/$RELEASE_DIR/linux"
         echo "  - $BASE_DIR/releases/$RELEASE_DIR/windows"
-        echo "Tip: You can enter project root manually (path containing releases/$RELEASE_DIR)."
-        echo ""
-        read -r -p "Project root path (or leave empty to cancel): " ALT_BASE
-        ALT_BASE="${ALT_BASE/#\~/$HOME}"
-        if [ -n "$ALT_BASE" ] && [ -d "$ALT_BASE/releases/$RELEASE_DIR/linux" ]; then
-            BASE_DIR="$(cd "$ALT_BASE" && pwd)"
-            RELEASE_PATH="$BASE_DIR/releases/$RELEASE_DIR/linux"
-        elif [ -n "$ALT_BASE" ] && [ -d "$ALT_BASE/releases/$RELEASE_DIR/windows" ]; then
-            BASE_DIR="$(cd "$ALT_BASE" && pwd)"
-            RELEASE_PATH="$BASE_DIR/releases/$RELEASE_DIR/windows"
-        else
-            echo "Release files still not found. Installation cancelled."
-            exit 1
-        fi
+        echo "Tip: Override URL with LAS_REPO_ZIP_URL if you use a fork/mirror."
+        exit 1
     fi
     
     echo "Copying files from: $RELEASE_PATH"
@@ -201,9 +255,6 @@ if [ "$METHOD" = "SOURCE" ]; then
     echo "Creating virtual environment..."
     python3 -m venv "$INSTALL_PATH/venv"
     
-    # Activate venv
-    source "$INSTALL_PATH/venv/bin/activate"
-    
     # Copy source files
     SRC_PATH="$BASE_DIR/src/$RELEASE_DIR"
     
@@ -212,20 +263,8 @@ if [ "$METHOD" = "SOURCE" ]; then
         echo "Error: Source files not found."
         echo "Checked:"
         echo "  - $BASE_DIR/src/$RELEASE_DIR"
-        echo "  - $INSTALLER_DIR/src/$RELEASE_DIR"
-        echo "  - $PWD/src/$RELEASE_DIR"
-        echo "Tip: Enter project root manually (path containing src/$RELEASE_DIR)."
-        echo ""
-        read -r -p "Project root path (or leave empty to cancel): " ALT_BASE
-        ALT_BASE="${ALT_BASE/#\~/$HOME}"
-        if [ -n "$ALT_BASE" ] && [ -d "$ALT_BASE/src/$RELEASE_DIR" ]; then
-            BASE_DIR="$(cd "$ALT_BASE" && pwd)"
-            SRC_PATH="$BASE_DIR/src/$RELEASE_DIR"
-        else
-            deactivate 2>/dev/null || true
-            echo "Source files still not found. Installation cancelled."
-            exit 1
-        fi
+        echo "Tip: Override URL with LAS_REPO_ZIP_URL if you use a fork/mirror."
+        exit 1
     fi
     
     echo "Copying source files..."
@@ -242,16 +281,13 @@ if [ "$METHOD" = "SOURCE" ]; then
     
     if [ -f "$REQUIREMENTS" ]; then
         echo "Installing Python dependencies (progress shown below)..."
-        pip install --progress-bar on -r "$REQUIREMENTS" || {
+        "$INSTALL_PATH/venv/bin/python" -m pip install --progress-bar on -r "$REQUIREMENTS" || {
             echo "Warning: Some dependencies failed to install"
             echo "You may need to install them manually"
         }
     else
         echo "Warning: requirements.txt not found"
     fi
-    
-    # Deactivate venv
-    deactivate 2>/dev/null || true
 fi
 
 # Create global launcher command
