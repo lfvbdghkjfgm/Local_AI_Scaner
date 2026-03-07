@@ -107,6 +107,12 @@ set -e
 # Resolve directories
 INSTALLER_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BASE_DIR="$(cd "$INSTALLER_DIR/../.." && pwd)"
+if [ ! -d "$BASE_DIR/src" ] && [ -d "$INSTALLER_DIR/src" ]; then
+    BASE_DIR="$INSTALLER_DIR"
+fi
+if [ ! -d "$BASE_DIR/src" ] && [ -d "$PWD/src" ]; then
+    BASE_DIR="$PWD"
+fi
 
 # Create directories
 echo ""
@@ -132,9 +138,20 @@ if [ "$METHOD" = "RELEASE" ]; then
         echo "Checked paths:"
         echo "  - $BASE_DIR/releases/$RELEASE_DIR/linux"
         echo "  - $BASE_DIR/releases/$RELEASE_DIR/windows"
-        echo "Tip: Use method [2] (source install) if release artifacts are not available."
+        echo "Tip: You can enter project root manually (path containing releases/$RELEASE_DIR)."
         echo ""
-        exit 1
+        read -r -p "Project root path (or leave empty to cancel): " ALT_BASE
+        ALT_BASE="${ALT_BASE/#\~/$HOME}"
+        if [ -n "$ALT_BASE" ] && [ -d "$ALT_BASE/releases/$RELEASE_DIR/linux" ]; then
+            BASE_DIR="$(cd "$ALT_BASE" && pwd)"
+            RELEASE_PATH="$BASE_DIR/releases/$RELEASE_DIR/linux"
+        elif [ -n "$ALT_BASE" ] && [ -d "$ALT_BASE/releases/$RELEASE_DIR/windows" ]; then
+            BASE_DIR="$(cd "$ALT_BASE" && pwd)"
+            RELEASE_PATH="$BASE_DIR/releases/$RELEASE_DIR/windows"
+        else
+            echo "Release files still not found. Installation cancelled."
+            exit 1
+        fi
     fi
     
     echo "Copying files from: $RELEASE_PATH"
@@ -192,10 +209,23 @@ if [ "$METHOD" = "SOURCE" ]; then
     
     if [ ! -d "$SRC_PATH" ]; then
         echo ""
-        echo "Error: Source files not found at: $SRC_PATH"
+        echo "Error: Source files not found."
+        echo "Checked:"
+        echo "  - $BASE_DIR/src/$RELEASE_DIR"
+        echo "  - $INSTALLER_DIR/src/$RELEASE_DIR"
+        echo "  - $PWD/src/$RELEASE_DIR"
+        echo "Tip: Enter project root manually (path containing src/$RELEASE_DIR)."
         echo ""
-        deactivate 2>/dev/null || true
-        exit 1
+        read -r -p "Project root path (or leave empty to cancel): " ALT_BASE
+        ALT_BASE="${ALT_BASE/#\~/$HOME}"
+        if [ -n "$ALT_BASE" ] && [ -d "$ALT_BASE/src/$RELEASE_DIR" ]; then
+            BASE_DIR="$(cd "$ALT_BASE" && pwd)"
+            SRC_PATH="$BASE_DIR/src/$RELEASE_DIR"
+        else
+            deactivate 2>/dev/null || true
+            echo "Source files still not found. Installation cancelled."
+            exit 1
+        fi
     fi
     
     echo "Copying source files..."
