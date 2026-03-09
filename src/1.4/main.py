@@ -11,12 +11,28 @@ def scanning_start_style():
     print(f"     {'>' * 3}  SCANNING STARTED  {'<' * 3}")
     print("-" * 50 + "\n")
 
+def resolve_cli_prog():
+    raw_name = Path(sys.argv[0]).name.strip()
+    normalized = raw_name.lower()
+    known_cli_names = {
+        'local-ai-scanner',
+        'local-ai-scanner.exe',
+        'local-ai-scaner',
+        'local-ai-scaner.exe',
+        'las',
+        'las.exe',
+    }
+    if normalized in known_cli_names:
+        return raw_name
+    return 'las'
+
 
 def main():
     warnings.filterwarnings('ignore', 
                        message='In the future `np.object` will be defined',
                        category=FutureWarning)
     parser = argparse.ArgumentParser(
+        prog=resolve_cli_prog(),
         description='LOCAL AI SCANNER - ML Model Security Analysis Tool for Trojan and Backdoor Detection',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""

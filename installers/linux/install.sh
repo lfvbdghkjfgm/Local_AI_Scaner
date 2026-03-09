@@ -137,6 +137,28 @@ case "$INSTALL_METHOD" in
         ;;
 esac
 
+# Choose operation mode
+echo ""
+echo "Operation mode:"
+echo " [1] Install new or reinstall"
+echo " [2] Update existing installation (same version)"
+echo ""
+read -p "Select mode (1-2, default is 1): " OPERATION_CHOICE
+OPERATION_CHOICE=${OPERATION_CHOICE:-1}
+
+case "$OPERATION_CHOICE" in
+    1)
+        OPERATION="INSTALL"
+        ;;
+    2)
+        OPERATION="UPDATE"
+        ;;
+    *)
+        echo "Invalid selection"
+        exit 1
+        ;;
+esac
+
 # Define installation paths
 INSTALL_PATH="$INSTALL_PREFIX/share/local-ai-scanner/v$VERSION_NUM"
 BIN_PATH="$INSTALL_PREFIX/bin"
@@ -149,9 +171,19 @@ echo ""
 echo "Installation details:"
 echo " Version: v$VERSION_NUM"
 echo " Method: $METHOD"
+echo " Operation: $OPERATION"
 echo " Location: $INSTALL_PATH"
 echo " Install type: $INSTALL_TYPE"
 echo ""
+
+if [ "$OPERATION" = "UPDATE" ] && [ ! -d "$INSTALL_PATH" ]; then
+    echo ""
+    echo "Error: Existing installation not found for update:"
+    echo "  $INSTALL_PATH"
+    echo "Install this version first or choose operation mode [1]."
+    exit 1
+fi
+
 read -p "Continue? (Y/n): " CONFIRM
 CONFIRM=${CONFIRM:-Y}
 
@@ -183,6 +215,10 @@ echo "Using downloaded package: $BASE_DIR"
 # Create directories
 echo ""
 echo "Creating installation directories..."
+if [ "$OPERATION" = "UPDATE" ]; then
+    echo "Existing installation detected. Replacing files..."
+    rm -rf "$INSTALL_PATH"
+fi
 mkdir -p "$INSTALL_PATH"
 mkdir -p "$BIN_PATH"
 

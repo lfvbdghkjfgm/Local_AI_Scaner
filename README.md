@@ -32,6 +32,25 @@ Recommended installation method by version:
 
 The latest source code is in `src/1.4`.
 
+## Direct download links
+
+Repository:
+
+- https://github.com/lfvbdghkjfgm/Local_AI_Scaner
+
+Installers:
+
+- Windows installer (`install.bat`): https://github.com/lfvbdghkjfgm/Local_AI_Scaner/raw/refs/heads/main/installers/windows/install.bat
+- Linux installer (`install.sh`): https://github.com/lfvbdghkjfgm/Local_AI_Scaner/raw/refs/heads/main/installers/linux/install.sh
+
+Program versions:
+
+- `v1.4` (latest, `SOURCE`): https://github.com/lfvbdghkjfgm/Local_AI_Scaner/archive/refs/heads/main.zip
+- `v1.3` (Windows `RELEASE`): https://github.com/lfvbdghkjfgm/Local_AI_Scaner/raw/refs/heads/main/releases/1.3/windows/LocalAIScanner.rar
+- `v1.2` (Windows `RELEASE`): https://github.com/lfvbdghkjfgm/Local_AI_Scaner/raw/refs/heads/main/releases/1.2/windows/Local%20AI%20Scaner.zip
+- `v1.1` (Windows `RELEASE`): https://github.com/lfvbdghkjfgm/Local_AI_Scaner/raw/refs/heads/main/releases/1.1/windows/LocalAIScanner.zip
+- `v1.0` (Windows `RELEASE`): https://github.com/lfvbdghkjfgm/Local_AI_Scaner/raw/refs/heads/main/releases/1.0/windows/Local%20AI%20Scanner.zip
+
 ## Quick start from source
 
 ```bash
@@ -93,6 +112,7 @@ Also available:
 
 - `las`
 - `local-ai-scaner` (compatibility alias)
+- `UPDATE` mode in installers for in-place update of an already installed selected version
 
 Installers download required files from internet by default, so a full local repository copy is not required.
 To override source URL (fork/mirror), set environment variable `LAS_REPO_ZIP_URL`.

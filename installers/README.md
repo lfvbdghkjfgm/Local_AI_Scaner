@@ -57,6 +57,7 @@ What it does:
 - creates launchers `local-ai-scanner.bat`, `las.bat`, `local-ai-scaner.bat`
 - adds install directory to system `PATH`
 - creates uninstaller in the installed version folder
+- supports `UPDATE` mode for existing installed version (replace files in place)
 
 ## Linux installer
 
@@ -85,6 +86,15 @@ What it does:
 - creates global launchers `local-ai-scanner`, `las`, `local-ai-scaner` in `<prefix>/bin`
 - updates PATH for user installs (`.bashrc`/`.zshrc`)
 - creates uninstaller in the installed version folder
+- supports `UPDATE` mode for existing installed version (replace files in place)
+
+## Update mode behavior
+
+When `UPDATE` is selected:
+
+- installer expects the target version folder to already exist
+- old files in that version folder are removed before installing new files
+- version number does not change (update is in-place for selected version)
 
 ## Internet source URL
 

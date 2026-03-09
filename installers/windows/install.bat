@@ -82,6 +82,26 @@ if "!INSTALL_METHOD!"=="1" (
     goto METHOD_LOOP
 )
 
+REM Choose operation mode
+:OPERATION_LOOP
+echo.
+echo Operation mode:
+echo  [1] Install new or reinstall
+echo  [2] Update existing installation (same version)
+echo.
+set /p OPERATION_CHOICE="Select mode (1-2, default is 1): "
+if "!OPERATION_CHOICE!"=="" set OPERATION_CHOICE=1
+
+if "!OPERATION_CHOICE!"=="1" (
+    set OPERATION=INSTALL
+) else if "!OPERATION_CHOICE!"=="2" (
+    set OPERATION=UPDATE
+) else (
+    echo.
+    echo Invalid selection. Please enter 1 or 2.
+    goto OPERATION_LOOP
+)
+
 REM Define installation paths
 set INSTALL_ROOT=%ProgramFiles%\LocalAIScanner
 set INSTALL_PATH=!INSTALL_ROOT!\v!VERSION_NUM!
@@ -97,7 +117,21 @@ echo.
 echo Installation details:
 echo  Version: v!VERSION_NUM!
 echo  Method: !METHOD!
+echo  Operation: !OPERATION!
 echo  Location: !INSTALL_PATH!
+
+if "!OPERATION!"=="UPDATE" (
+    if not exist "!INSTALL_PATH!" (
+        echo.
+        echo Error: Existing installation not found for update:
+        echo !INSTALL_PATH!
+        echo.
+        echo Install this version first or choose operation mode [1].
+        pause
+        exit /b 1
+    )
+)
+
 echo.
 set /p CONFIRM="Continue? (Y/N): "
 
@@ -129,6 +163,15 @@ echo Using downloaded package: !BASE_DIR!
 REM Create installation directory
 echo.
 echo Creating installation directories...
+if "!OPERATION!"=="UPDATE" (
+    echo Existing installation detected. Replacing files...
+    rmdir /s /q "!INSTALL_PATH!" >nul 2>&1
+    if exist "!INSTALL_PATH!" (
+        echo Error: Failed to clean existing installation directory
+        pause
+        exit /b 1
+    )
+)
 if not exist "!INSTALL_PATH!" (
     mkdir "!INSTALL_PATH!"
     if errorlevel 1 (
