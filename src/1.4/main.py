@@ -33,7 +33,7 @@ def main():
                        category=FutureWarning)
     parser = argparse.ArgumentParser(
         prog=resolve_cli_prog(),
-        description='LOCAL AI SCANNER - ML Model Security Analysis Tool for Trojan and Backdoor Detection',
+        description='LOCAL AI SCANNER - ML Model Security Analysis Tool for Trojan, Malicious Code and Shadow Logic Detection',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
     Usage examples:
