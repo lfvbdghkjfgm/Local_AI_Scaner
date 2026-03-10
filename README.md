@@ -28,9 +28,22 @@ Local AI Scanner helps you perform an offline pre-check and quickly triage risk 
 Recommended installation method by version:
 
 - `v1.0` to `v1.2`: prefer pre-built executable install (`RELEASE` mode).
-- `v1.3` to `v1.4`: prefer source install (`SOURCE` mode) for latest logic and dependency behavior.
+- `v1.3` to `v1.5`: prefer source install (`SOURCE` mode) for latest logic and dependency behavior.
 
-The latest source code is in `src/1.4`.
+The latest source code is in `src/1.5`.
+
+## What's new in v1.5
+
+- Expanded YARA signatures for more precise threat correlation instead of single-token hits.
+- Added dedicated detection rules for:
+  - deserialization-to-RCE chains
+  - reverse shell techniques
+  - obfuscated payload execution
+  - secret collection with exfiltration channels
+  - persistence and defense evasion
+  - encoded PowerShell payloads
+  - potential `trust_remote_code` abuse in model pipelines
+- Full release notes: `RELEASE_v1.5.md`
 
 ## Direct download links
 
@@ -45,6 +58,7 @@ Installers:
 
 Program versions:
 
+- `v1.5` source package (`main.zip`): [Download](../../archive/refs/heads/main.zip)
 - `v1.4` source package (`main.zip`): [Download](../../archive/refs/heads/main.zip)
 - `v1.3` Windows `RELEASE` (`LocalAIScanner.rar`): [Download](../../raw/refs/heads/main/releases/1.3/windows/LocalAIScanner.rar)
 - `v1.2` Windows `RELEASE` (`Local AI Scaner.zip`): [Download](../../raw/refs/heads/main/releases/1.2/windows/Local%20AI%20Scaner.zip)
@@ -54,7 +68,7 @@ Program versions:
 ## Quick start from source
 
 ```bash
-cd src/1.4
+cd src/1.5
 python -m venv .venv
 # Windows
 .venv\Scripts\activate
@@ -134,9 +148,11 @@ Operational guidance:
 ```text
 project/
   README.md
+  RELEASE_v1.5.md
   RELEASE_v1.4.md
   requirements.txt
   src/
+    1.5/
     1.4/
     1.3/
     1.2/
