@@ -24,7 +24,7 @@ def resolve_cli_prog():
     }
     if normalized in known_cli_names:
         return raw_name
-    return 'las'
+    return 'local-ai-scanner'
 
 
 def main():
