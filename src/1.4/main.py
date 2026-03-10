@@ -62,7 +62,6 @@ def main():
         parser.print_help()
         return 0
 
-    # Reduce TensorFlow startup noise in CLI output.
     os.environ.setdefault('TF_CPP_MIN_LOG_LEVEL', '2')
     from scanner import Scanner
     from output import Outputer
