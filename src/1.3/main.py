@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 
-from scanner import Scanner
-from output import Outputer
 import argparse
 import sys
 import warnings
 from pathlib import Path
+
+APP_VERSION = "1.3"
 
 def scanning_start_style():
     print("\n" + "-" * 50)
@@ -31,6 +31,7 @@ def main():
       %(prog)s --verbose "username/suspicious-model"
             """
     )
+    parser.add_argument('--version', action='version', version=f'%(prog)s v{APP_VERSION}')
     parser.add_argument('model', help='Path to model file, directory, or HuggingFace model ID')
     parser.add_argument('--scan-type', choices=['full', 'format', 'security', 'backdoor'],
                         default='full', help='Scan type (default: full)')
@@ -43,6 +44,8 @@ def main():
                         help='Verbose output')
 
     args = parser.parse_args()
+    from scanner import Scanner
+    from output import Outputer
     scanning_start_style()
 
     path = Path(args.model)

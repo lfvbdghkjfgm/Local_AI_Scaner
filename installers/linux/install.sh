@@ -352,10 +352,7 @@ if [ ! -f "\$SRC_DIR/main.py" ]; then
     echo "main.py not found in \$SRC_DIR" >&2
     exit 1
 fi
-(
-    cd "\$SRC_DIR" || exit 1
-    "\$PY_EXE" main.py "\$@"
-)
+LAS_INVOKE_CWD="\$PWD" "\$PY_EXE" "\$SRC_DIR/main.py" "\$@"
 exit \$?
 EOF
 else

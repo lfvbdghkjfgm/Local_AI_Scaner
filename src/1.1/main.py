@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 
-from scanner import Scanner
-from output import Outputer
 import argparse
 import sys
 import warnings
+
+APP_VERSION = "1.1"
 
 def scanning_start_style():
     print("\n" + "─" * 50)
@@ -29,6 +29,7 @@ def main():
             """
     )
     parser.add_argument('model', help='Путь к модели или идентификатор HuggingFace')
+    parser.add_argument('--version', action='version', version=f'%(prog)s v{APP_VERSION}')
     parser.add_argument('--scan-type', choices=['full', 'format', 'security', 'backdoor'],
                         default='full', help='Тип сканирования (по умолчанию: full)')
     parser.add_argument('--output-format', '-f', choices=['text', 'json', 'csv'],
@@ -38,6 +39,8 @@ def main():
                         help='Подробный вывод')
 
     args = parser.parse_args()
+    from scanner import Scanner
+    from output import Outputer
     scanning_start_style()
 
     scanner = Scanner(out_form=args.output_format, verb=args.verbose)

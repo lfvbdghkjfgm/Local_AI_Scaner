@@ -6,6 +6,8 @@ import sys
 import warnings
 from pathlib import Path
 
+APP_VERSION = "1.5"
+
 def scanning_start_style():
     print("\n" + "-" * 50)
     print(f"     {'>' * 3}  SCANNING STARTED  {'<' * 3}")
@@ -25,6 +27,51 @@ def resolve_cli_prog():
     if normalized in known_cli_names:
         return raw_name
     return 'local-ai-scanner'
+
+def resolve_invoke_cwd() -> Path:
+    raw = os.environ.get('LAS_INVOKE_CWD', '').strip()
+    if raw:
+        p = Path(raw).expanduser()
+        if p.exists() and p.is_dir():
+            return p.resolve()
+    return Path.cwd().resolve()
+
+def resolve_output_path(output_path: str, invoke_cwd: Path) -> Path:
+    candidate = Path(output_path).expanduser()
+    if candidate.is_absolute():
+        return candidate
+    return (invoke_cwd / candidate).resolve()
+
+def resolve_model_input(model_arg: str, invoke_cwd: Path) -> str:
+    candidate = Path(model_arg).expanduser()
+    if candidate.is_absolute():
+        return str(candidate)
+    preferred = (invoke_cwd / candidate)
+    if preferred.exists():
+        return str(preferred.resolve())
+    if candidate.exists():
+        return str(candidate.resolve())
+    return model_arg
+
+def render_output(formatter, results, output_format: str, detailed_json: bool) -> str:
+    if output_format == 'json':
+        return formatter.json_format(results, detailed=detailed_json)
+    if output_format == 'csv':
+        return formatter.csv_format(results)
+    return formatter.text_format(results)
+
+def default_output_name(model_arg: str, output_format: str) -> str:
+    suffix = '.txt'
+    if output_format == 'json':
+        suffix = '.json'
+    elif output_format == 'csv':
+        suffix = '.csv'
+    return f"scan_results_{Path(model_arg).name}{suffix}"
+
+def write_output_file(output_path: Path, payload: str):
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(output_path, 'w', encoding='utf-8') as f:
+        f.write(payload)
 
 
 def main():
@@ -46,6 +93,7 @@ def main():
       %(prog)s --verbose "username/suspicious-model"
             """
     )
+    parser.add_argument('--version', action='version', version=f'%(prog)s v{APP_VERSION}')
     parser.add_argument('model', nargs='?', help='Path to model file, directory, or HuggingFace model ID')
     parser.add_argument('--scan-type', choices=['full', 'format', 'security', 'backdoor'],
                         default='full', help='Scan type (default: full)')
@@ -67,50 +115,30 @@ def main():
     from output import Outputer
     scanning_start_style()
 
-    path = Path(args.model)
+    invoke_cwd = resolve_invoke_cwd()
+    scan_target = resolve_model_input(args.model, invoke_cwd)
+    path = Path(scan_target)
     is_directory = path.exists() and path.is_dir()
     
     scanner = Scanner(out_form=args.output_format, verb=args.verbose)
     formatter = Outputer()
 
     if is_directory:
-        results = scanner.scan_directory(str(path), args.scan_type)
+        results = scanner.scan_directory(scan_target, args.scan_type)
         files_list = formatter.directory_scan_console(results)
         print(files_list)
         
+        detailed = render_output(formatter, results, args.output_format, args.detailed_json)
         if args.output_file:
-            if args.output_format == 'json':
-                detailed = formatter.json_format(results, detailed=args.detailed_json)
-            elif args.output_format == 'csv':
-                detailed = formatter.csv_format(results)
-            else:
-                detailed = formatter.text_format(results)
-            
-            with open(args.output_file, 'w', encoding='utf-8') as f:
-                f.write(detailed)
-            if args.output_format != 'json':
-                saved_kind = "Detailed"
-            else:
-                saved_kind = "Detailed" if args.detailed_json else "Summary"
-            print(f"\n{saved_kind} results saved to: {args.output_file}")
+            output_path = resolve_output_path(args.output_file, invoke_cwd)
         else:
-            default_output = f"scan_results_{Path(args.model).name}.txt"
-            if args.output_format == 'json':
-                detailed = formatter.json_format(results, detailed=args.detailed_json)
-                default_output = f"scan_results_{Path(args.model).name}.json"
-            elif args.output_format == 'csv':
-                detailed = formatter.csv_format(results)
-                default_output = f"scan_results_{Path(args.model).name}.csv"
-            else:
-                detailed = formatter.text_format(results)
-            
-            with open(default_output, 'w', encoding='utf-8') as f:
-                f.write(detailed)
-            if args.output_format != 'json':
-                saved_kind = "Detailed"
-            else:
-                saved_kind = "Detailed" if args.detailed_json else "Summary"
-            print(f"{saved_kind} results saved to: {default_output}")
+            output_path = resolve_output_path(default_output_name(args.model, args.output_format), invoke_cwd)
+        write_output_file(output_path, detailed)
+        if args.output_format != 'json':
+            saved_kind = "Detailed"
+        else:
+            saved_kind = "Detailed" if args.detailed_json else "Summary"
+        print(f"\n{saved_kind} results saved to: {output_path}")
         
         overall_risk_level = results.get('overall_risk_level', 'UNKNOWN')
         if overall_risk_level in ['CRITICAL', 'HIGH']:
@@ -120,21 +148,16 @@ def main():
         else:
             sys.exit(0)
     else:
-        results = scanner.scan(args.model, args.scan_type)
-        
-        if args.output_format == 'json':
-            output = formatter.json_format(results, detailed=args.detailed_json)
-        elif args.output_format == 'csv':
-            output = formatter.csv_format(results)
-        else:
-            output = formatter.text_format(results)
+        results = scanner.scan(scan_target, args.scan_type)
+        output = render_output(formatter, results, args.output_format, args.detailed_json)
+        print(output)
 
         if args.output_file:
-            with open(args.output_file, 'w', encoding='utf-8') as f:
-                f.write(output)
-            print(f"Results saved to: {args.output_file}")
+            output_path = resolve_output_path(args.output_file, invoke_cwd)
         else:
-            print(output)
+            output_path = resolve_output_path(default_output_name(args.model, args.output_format), invoke_cwd)
+        write_output_file(output_path, output)
+        print(f"Results saved to: {output_path}")
 
         risk_level = results.get('risk_assessment', {}).get('level', 'UNKNOWN')
         if risk_level in ['CRITICAL', 'HIGH']:

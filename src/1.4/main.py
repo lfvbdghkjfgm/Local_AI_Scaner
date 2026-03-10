@@ -6,6 +6,8 @@ import sys
 import warnings
 from pathlib import Path
 
+APP_VERSION = "1.4"
+
 def scanning_start_style():
     print("\n" + "-" * 50)
     print(f"     {'>' * 3}  SCANNING STARTED  {'<' * 3}")
@@ -46,6 +48,7 @@ def main():
       %(prog)s --verbose "username/suspicious-model"
             """
     )
+    parser.add_argument('--version', action='version', version=f'%(prog)s v{APP_VERSION}')
     parser.add_argument('model', nargs='?', help='Path to model file, directory, or HuggingFace model ID')
     parser.add_argument('--scan-type', choices=['full', 'format', 'security', 'backdoor'],
                         default='full', help='Scan type (default: full)')

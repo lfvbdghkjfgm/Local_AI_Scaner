@@ -329,14 +329,9 @@ if "!METHOD!"=="SOURCE" (
         echo   echo Error: main.py not found in %%SRC_DIR%%
         echo   endlocal ^& exit /b 1
         echo ^)
-        echo pushd "%%SRC_DIR%%" ^>nul
-        echo if errorlevel 1 ^(
-        echo   echo Error: Failed to open %%SRC_DIR%%
-        echo   endlocal ^& exit /b 1
-        echo ^)
-        echo "%%PY_EXE%%" main.py %%*
+        echo set "LAS_INVOKE_CWD=%%CD%%"
+        echo "%%PY_EXE%%" "%%SRC_DIR%%\main.py" %%*
         echo set "EXIT_CODE=%%ERRORLEVEL%%"
-        echo popd ^>nul
         echo endlocal ^& exit /b %%EXIT_CODE%%
     ) > "!INSTALL_PATH!\LocalAIScanner.bat"
 
