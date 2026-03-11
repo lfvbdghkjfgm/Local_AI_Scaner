@@ -361,13 +361,47 @@ class Scanner:
         return findings
 
     def _cache_path(self) -> Path:
-        base = Path(__file__).parent
-        cache_dir = base / '.cache'
+        candidates = []
+
+        # Optional explicit override for automation/tests.
+        env_cache_dir = os.environ.get('LAS_CACHE_DIR')
+        if env_cache_dir:
+            candidates.append(Path(env_cache_dir))
+
+        if os.name == 'nt':
+            # Prefer a user-writable cache location on Windows.
+            local_app_data = os.environ.get('LOCALAPPDATA') or os.environ.get('APPDATA')
+            if local_app_data:
+                candidates.append(Path(local_app_data) / 'LocalAIScanner' / 'cache')
+        else:
+            xdg_cache = os.environ.get('XDG_CACHE_HOME')
+            if xdg_cache:
+                candidates.append(Path(xdg_cache) / 'local-ai-scanner')
+            candidates.append(Path.home() / '.cache' / 'local-ai-scanner')
+
+        # Backward-compatible fallback for source-based runs.
+        candidates.append(Path(__file__).parent / '.cache')
+
+        for cache_dir in candidates:
+            try:
+                cache_dir.mkdir(parents=True, exist_ok=True)
+                # Validate we can write here.
+                probe = cache_dir / '.write_probe'
+                with open(probe, 'w', encoding='utf-8') as f:
+                    f.write('ok')
+                probe.unlink(missing_ok=True)
+                return cache_dir / 'scans.json'
+            except Exception as e:
+                if self.verb:
+                    self.logger.debug(f'Cache path unusable: {cache_dir} ({e})')
+
+        # Last-resort fallback to temporary directory.
+        tmp_cache = Path(tempfile.gettempdir()) / 'local-ai-scanner-cache'
         try:
-            cache_dir.mkdir(exist_ok=True)
+            tmp_cache.mkdir(parents=True, exist_ok=True)
         except Exception:
             pass
-        return cache_dir / 'scans.json'
+        return tmp_cache / 'scans.json'
 
     def _load_cache(self, sha: str, max_age_days: int = 7):
         if not sha:
