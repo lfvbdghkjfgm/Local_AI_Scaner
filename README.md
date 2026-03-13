@@ -81,15 +81,15 @@ python main.py --help
 ## Quick scan examples
 
 ```bash
-python main.py model.pt
-python main.py ./models --output-format json -o results.json
-python main.py ./models --output-format json --detailed-json -o full_results.json
+local-ai-scanner model.pt
+local-ai-scanner ./models --output-format json -o results.json
+local-ai-scanner ./models --output-format json --detailed-json -o full_results.json
 ```
 
 ## CLI
 
 ```text
-python main.py <path_or_hf_id> [--scan-type full|format|security|backdoor]
+local-ai-scanner <path_or_hf_id> [--scan-type full|format|security|backdoor]
                              [--output-format text|json|csv]
                              [--detailed-json]
                              [--output-file FILE]
