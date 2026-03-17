@@ -5,3 +5,4 @@ huggingface-hub
 numpy
 requests
 argparse
+yara-python

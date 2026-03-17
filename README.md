@@ -28,22 +28,26 @@ Local AI Scanner helps you perform an offline pre-check and quickly triage risk 
 Recommended installation method by version:
 
 - `v1.0` to `v1.2`: prefer pre-built executable install (`RELEASE` mode).
-- `v1.3` to `v1.5`: prefer source install (`SOURCE` mode) for latest logic and dependency behavior.
+- `v1.3` to `v1.5.2`: prefer source install (`SOURCE` mode) for latest logic and dependency behavior.
 
-The latest source code is in `src/1.5`.
+The latest source code is in `src/1.5.2`.
 
-## What's new in v1.5
+## What's new in v1.5.2
 
-- Expanded YARA signatures for more precise threat correlation instead of single-token hits.
-- Added dedicated detection rules for:
-  - deserialization-to-RCE chains
-  - reverse shell techniques
-  - obfuscated payload execution
-  - secret collection with exfiltration channels
-  - persistence and defense evasion
-  - encoded PowerShell payloads
-  - potential `trust_remote_code` abuse in model pipelines
-- Full release notes: `RELEASE_v1.5.md`
+- Added full YARA engine dependency in `requirements.txt` (`yara-python`).
+- Improved YARA execution quality:
+  - full-file YARA matching (not only the first 1MB sample)
+  - cached YARA rules compilation at scanner startup
+  - explicit YARA engine status/error reporting in results
+  - YARA severity-aware risk contribution (`medium/high/critical`)
+- Expanded and refined signature base with new rules for:
+  - credential file harvesting + exfiltration
+  - dynamic downloader stagers
+  - archive extraction followed by execution
+  - native library loading abuse
+- Fixed cache collision between scan types by using a scan-type-specific cache key.
+- Full release notes: `RELEASE_v1.5.2.md`
+- Signature sources: `SIGNATURE_SOURCES.md`
 
 ## Direct download links
 
@@ -58,6 +62,8 @@ Installers:
 
 Program versions:
 
+- `v1.5.2` source package (`main.zip`): [Download](../../archive/refs/heads/main.zip)
+- `v1.5.1` source package (`main.zip`): [Download](../../archive/refs/heads/main.zip)
 - `v1.5` source package (`main.zip`): [Download](../../archive/refs/heads/main.zip)
 - `v1.4` source package (`main.zip`): [Download](../../archive/refs/heads/main.zip)
 - `v1.3` Windows `RELEASE` (`LocalAIScanner.rar`): [Download](../../raw/refs/heads/main/releases/1.3/windows/LocalAIScanner.rar)
@@ -68,7 +74,7 @@ Program versions:
 ## Quick start from source
 
 ```bash
-cd src/1.5
+cd src/1.5.2
 python -m venv .venv
 # Windows
 .venv\Scripts\activate
@@ -148,10 +154,14 @@ Operational guidance:
 ```text
 project/
   README.md
+  RELEASE_v1.5.2.md
   RELEASE_v1.5.md
   RELEASE_v1.4.md
+  SIGNATURE_SOURCES.md
   requirements.txt
   src/
+    1.5.2/
+    1.5.1/
     1.5/
     1.4/
     1.3/

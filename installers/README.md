@@ -28,7 +28,7 @@ Also available:
 Recommended install method by version:
 
 - `v1.0` to `v1.2`: prefer `RELEASE`
-- `v1.3` to `v1.5.1`: prefer `SOURCE`
+- `v1.3` to `v1.5.2`: prefer `SOURCE`
 
 Why:
 

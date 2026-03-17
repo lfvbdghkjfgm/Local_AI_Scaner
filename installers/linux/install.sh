@@ -79,43 +79,48 @@ PY
 
 # Get installation version from user
 echo "Available versions:"
-echo " [1] v1.5.1 Latest (Recommended)"
-echo " [2] v1.5"
-echo " [3] v1.4"
-echo " [4] v1.3"
-echo " [5] v1.2"
-echo " [6] v1.1"
-echo " [7] v1.0"
+echo " [1] v1.5.2 Latest (Recommended)"
+echo " [2] v1.5.1"
+echo " [3] v1.5"
+echo " [4] v1.4"
+echo " [5] v1.3"
+echo " [6] v1.2"
+echo " [7] v1.1"
+echo " [8] v1.0"
 echo ""
-read -p "Select version (1-7, default is 1): " VERSION
+read -p "Select version (1-8, default is 1): " VERSION
 VERSION=${VERSION:-1}
 
 case "$VERSION" in
     1)
+        VERSION_NUM="1.5.2"
+        RELEASE_DIR="1.5.2"
+        ;;
+    2)
         VERSION_NUM="1.5.1"
         RELEASE_DIR="1.5.1"
         ;;
-    2)
+    3)
         VERSION_NUM="1.5"
         RELEASE_DIR="1.5"
         ;;
-    3)
+    4)
         VERSION_NUM="1.4"
         RELEASE_DIR="1.4"
         ;;
-    4)
+    5)
         VERSION_NUM="1.3"
         RELEASE_DIR="1.3"
         ;;
-    5)
+    6)
         VERSION_NUM="1.2"
         RELEASE_DIR="1.2"
         ;;
-    6)
+    7)
         VERSION_NUM="1.1"
         RELEASE_DIR="1.1"
         ;;
-    7)
+    8)
         VERSION_NUM="1.0"
         RELEASE_DIR="1.0"
         ;;

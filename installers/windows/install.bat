@@ -32,41 +32,45 @@ REM Get installation version from user
 :VERSION_LOOP
 echo.
 echo Available versions:
-echo  [1] v1.5.1 Latest (Recommended)
-echo  [2] v1.5
-echo  [3] v1.4
-echo  [4] v1.3
-echo  [5] v1.2
-echo  [6] v1.1
-echo  [7] v1.0
+echo  [1] v1.5.2 Latest (Recommended)
+echo  [2] v1.5.1
+echo  [3] v1.5
+echo  [4] v1.4
+echo  [5] v1.3
+echo  [6] v1.2
+echo  [7] v1.1
+echo  [8] v1.0
 echo.
-set /p VERSION_CHOICE="Select version (1-7, default is 1): "
+set /p VERSION_CHOICE="Select version (1-8, default is 1): "
 if "!VERSION_CHOICE!"=="" set VERSION_CHOICE=1
 
 if "!VERSION_CHOICE!"=="1" (
+    set VERSION_NUM=1.5.2
+    set RELEASE_DIR=1.5.2
+) else if "!VERSION_CHOICE!"=="2" (
     set VERSION_NUM=1.5.1
     set RELEASE_DIR=1.5.1
-) else if "!VERSION_CHOICE!"=="2" (
+) else if "!VERSION_CHOICE!"=="3" (
     set VERSION_NUM=1.5
     set RELEASE_DIR=1.5
-) else if "!VERSION_CHOICE!"=="3" (
+) else if "!VERSION_CHOICE!"=="4" (
     set VERSION_NUM=1.4
     set RELEASE_DIR=1.4
-) else if "!VERSION_CHOICE!"=="4" (
+) else if "!VERSION_CHOICE!"=="5" (
     set VERSION_NUM=1.3
     set RELEASE_DIR=1.3
-) else if "!VERSION_CHOICE!"=="5" (
+) else if "!VERSION_CHOICE!"=="6" (
     set VERSION_NUM=1.2
     set RELEASE_DIR=1.2
-) else if "!VERSION_CHOICE!"=="6" (
+) else if "!VERSION_CHOICE!"=="7" (
     set VERSION_NUM=1.1
     set RELEASE_DIR=1.1
-) else if "!VERSION_CHOICE!"=="7" (
+) else if "!VERSION_CHOICE!"=="8" (
     set VERSION_NUM=1.0
     set RELEASE_DIR=1.0
 ) else (
     echo.
-    echo Invalid selection. Please enter 1, 2, 3, 4, 5, 6, or 7.
+    echo Invalid selection. Please enter 1, 2, 3, 4, 5, 6, 7, or 8.
     goto VERSION_LOOP
 )
 
