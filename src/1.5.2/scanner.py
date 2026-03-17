@@ -85,7 +85,7 @@ class Scanner:
                 'warning_critical': 2.0,
                 'network_ops': 1.5,
                 'system_calls': 1.8,
-                'shadow_pattern': 0.6,
+                'shadow_pattern': 0.5,
                 'yara_medium': 0.8,
                 'yara_high': 1.6,
                 'yara_critical': 2.2
@@ -1275,7 +1275,7 @@ class Scanner:
                 critical_raw += float(w.get('system_calls', 1.8))
                 system_calls_count += 1
             elif 'shadow logic score' in msg_lower:
-                critical_raw += float(w.get('shadow_pattern', 0.6))
+                critical_raw += float(w.get('shadow_pattern', 0.5))
                 shadow_pattern_count += 1
                 has_shadow_score = True
             if 'dangerous marker-like tensor names' in msg_lower:
@@ -1342,6 +1342,21 @@ class Scanner:
             level = 'CRITICAL'
         if yara_high_count >= 2 and severity[level] < severity['HIGH']:
             level = 'HIGH'
+
+        # Light false-positive damping: downgrade MEDIUM only for low-signal cases.
+        low_signal_medium = (
+            level == 'MEDIUM'
+            and trojan_sigs_count == 0
+            and yara_critical_count == 0
+            and yara_high_count == 0
+            and system_calls_count == 0
+            and network_ops_count <= 1
+            and len(security) <= 2
+            and len(susp) <= 1
+            and errors_count == 0
+        )
+        if low_signal_medium:
+            level = 'LOW'
 
         self.results['risk_assessment'] = {
             'raw_score': round(raw_score, 3),
